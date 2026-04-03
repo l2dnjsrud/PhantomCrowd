@@ -24,9 +24,34 @@
     </section>
 
     <!-- Step 2: Graph Ready -->
-    <section v-if="graphData && graphData.stats.nodes > 0" class="card step-card">
+    <section v-if="graphData && graphData.stats.nodes > 0" class="graph-section">
       <h3>{{ $t('campaign.graphTitle', { nodes: graphData.stats.nodes, edges: graphData.stats.edges }) }}</h3>
-      <div ref="graphContainer" class="graph-container"></div>
+      <div class="graph-layout">
+        <div class="graph-main">
+          <div ref="graphContainer" class="graph-container"></div>
+        </div>
+        <div class="graph-sidebar" v-if="selectedNode">
+          <div class="node-detail-card">
+            <div class="node-detail-header">
+              <span class="node-type-badge" :style="{ background: selectedNode.color }">{{ selectedNode.type }}</span>
+              <h4>{{ selectedNode.label }}</h4>
+            </div>
+            <div v-if="selectedNode.description" class="node-description">
+              {{ selectedNode.description }}
+            </div>
+            <div class="node-connections">
+              <h5>Connections</h5>
+              <div v-for="conn in selectedNode.connections" :key="conn.target" class="connection-item">
+                <span class="conn-label">{{ conn.label }}</span>
+                <span class="conn-target">→ {{ conn.target }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="graph-sidebar graph-sidebar-empty" v-else>
+          <p>Click a node to see details</p>
+        </div>
+      </div>
     </section>
 
     <!-- Step 3: Simulation -->
@@ -54,7 +79,7 @@
       </div>
     </section>
 
-    <!-- Step 4: Report -->
+    <!-- Step 4: Report + Interview (2-panel layout) -->
     <section v-if="campaign.report" class="report-section">
       <!-- Score Cards -->
       <div class="score-grid">
@@ -76,43 +101,53 @@
         </div>
       </div>
 
-      <!-- Summary -->
-      <div class="card">
-        <h3>{{ $t('report.summary') }}</h3>
-        <p class="summary-text">{{ campaign.report.summary }}</p>
-      </div>
+      <!-- 2-panel: Report (left) + Interview (right) -->
+      <div class="report-layout">
+        <div class="report-main">
+          <!-- Summary -->
+          <div class="report-card">
+            <h3>{{ $t('report.summary') }}</h3>
+            <p class="summary-text">{{ campaign.report.summary }}</p>
+          </div>
 
-      <!-- Report Sections -->
-      <div v-for="sec in campaign.report.sections" :key="sec.title" class="card">
-        <h3>{{ sec.title }}</h3>
-        <p class="section-content">{{ sec.content }}</p>
-      </div>
+          <!-- Report Sections -->
+          <div v-for="sec in campaign.report.sections" :key="sec.title" class="report-card">
+            <h3>{{ sec.title }}</h3>
+            <p class="section-content">{{ sec.content }}</p>
+          </div>
 
-      <!-- Recommendations -->
-      <div class="card">
-        <h3>{{ $t('report.recommendations') }}</h3>
-        <ul class="rec-list">
-          <li v-for="rec in campaign.report.recommendations" :key="rec">{{ rec }}</li>
-        </ul>
-      </div>
-    </section>
+          <!-- Recommendations -->
+          <div class="report-card">
+            <h3>{{ $t('report.recommendations') }}</h3>
+            <ul class="rec-list">
+              <li v-for="rec in campaign.report.recommendations" :key="rec">{{ rec }}</li>
+            </ul>
+          </div>
+        </div>
 
-    <!-- Step 5: Interview -->
-    <section v-if="campaign.status === 'completed'" class="card step-card">
-      <h3>{{ $t('interview.title') }}</h3>
-      <div class="interview-form">
-        <select v-model="interviewAgent">
-          <option value="">{{ $t('interview.selectAgent') }}</option>
-          <option v-for="name in agentNames" :key="name" :value="name">{{ name }}</option>
-        </select>
-        <input v-model="interviewQuestion" :placeholder="$t('interview.placeholder')" @keyup.enter="doInterview" />
-        <button class="btn-primary" @click="doInterview" :disabled="!interviewAgent || !interviewQuestion || interviewing">
-          {{ interviewing ? $t('interview.asking') : $t('interview.ask') }}
-        </button>
-      </div>
-      <div v-if="interviewResponse" class="interview-response card">
-        <strong>@{{ interviewAgent }}:</strong>
-        <p>{{ interviewResponse }}</p>
+        <!-- Interview sidebar -->
+        <div class="interview-sidebar" v-if="campaign.status === 'completed'">
+          <div class="interview-panel">
+            <h3>{{ $t('interview.title') }}</h3>
+            <select v-model="interviewAgent">
+              <option value="">{{ $t('interview.selectAgent') }}</option>
+              <option v-for="name in agentNames" :key="name" :value="name">{{ name }}</option>
+            </select>
+            <div class="interview-input-row">
+              <input v-model="interviewQuestion" :placeholder="$t('interview.placeholder')" @keyup.enter="doInterview" />
+              <button class="btn-primary btn-sm" @click="doInterview" :disabled="!interviewAgent || !interviewQuestion || interviewing">
+                {{ interviewing ? '...' : $t('interview.ask') }}
+              </button>
+            </div>
+            <div v-if="interviewResponse" class="interview-response">
+              <div class="interview-agent-name">@{{ interviewAgent }}</div>
+              <p>{{ interviewResponse }}</p>
+            </div>
+            <div v-else class="interview-hint">
+              <p>Select an agent and ask them about their reactions during the simulation.</p>
+            </div>
+          </div>
+        </div>
       </div>
     </section>
 
@@ -142,6 +177,11 @@ const graphData = ref<GraphData | null>(null)
 const simStatus = ref<SimStatus | null>(null)
 const actions = ref<SimActionItem[]>([])
 const graphContainer = ref<HTMLElement | null>(null)
+
+const selectedNode = ref<{
+  id: string; label: string; type: string; description: string; color: string;
+  connections: { label: string; target: string }[]
+} | null>(null)
 
 const interviewAgentName = ref('')
 const interviewQuestion = ref('')
@@ -350,11 +390,27 @@ function renderGraph() {
       .on('end', (e, d: any) => { if (!e.active) simulation.alphaTarget(0); d.fx = null; d.fy = null })
     )
 
-  // Node hover glow
+  // Node hover + click
   node.on('mouseover', function() {
     d3.select(this).attr('stroke', '#7c5cfc').attr('stroke-width', 4)
   }).on('mouseout', function() {
     d3.select(this).attr('stroke', '#0a0a0f').attr('stroke-width', 2)
+  }).on('click', (_event: any, d: any) => {
+    // Find connections for this node
+    const conns = links
+      .filter((l: any) => (l.source?.id || l.source) === d.id || (l.target?.id || l.target) === d.id)
+      .map((l: any) => ({
+        label: l.label || 'related',
+        target: (l.source?.id || l.source) === d.id ? (l.target?.id || l.target) : (l.source?.id || l.source),
+      }))
+    selectedNode.value = {
+      id: d.id,
+      label: d.label,
+      type: d.type || 'unknown',
+      description: d.description || '',
+      color: getNodeColor(d.type),
+      connections: conns,
+    }
   })
 
   // Node labels
@@ -424,7 +480,32 @@ onUnmounted(() => { if (pollTimer) clearInterval(pollTimer) })
 .step-card p { color: var(--text-secondary); line-height: 1.5; }
 
 /* Graph */
-.graph-container { width: 100%; height: 600px; background: var(--bg-secondary); border-radius: 8px; overflow: hidden; }
+.graph-section { margin-bottom: 8px; }
+.graph-section h3 { margin-bottom: 12px; }
+.graph-layout { display: grid; grid-template-columns: 1fr 300px; gap: 16px; }
+.graph-main { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+.graph-container { width: 100%; height: 600px; background: var(--bg-secondary); }
+
+.graph-sidebar { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; }
+.graph-sidebar-empty { display: flex; align-items: center; justify-content: center; }
+.graph-sidebar-empty p { color: var(--text-secondary); font-size: 14px; }
+
+.node-detail-card { display: flex; flex-direction: column; gap: 16px; }
+.node-detail-header { display: flex; flex-direction: column; gap: 8px; }
+.node-detail-header h4 { font-size: 18px; margin: 0; }
+.node-type-badge {
+  display: inline-block; width: fit-content; padding: 3px 10px;
+  border-radius: 12px; font-size: 11px; font-weight: 600;
+  color: white; text-transform: uppercase;
+}
+.node-description { color: var(--text-secondary); font-size: 13px; line-height: 1.5; }
+.node-connections h5 { font-size: 13px; color: var(--text-secondary); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px; }
+.connection-item {
+  display: flex; gap: 8px; padding: 6px 0;
+  border-bottom: 1px solid var(--border); font-size: 13px;
+}
+.conn-label { color: var(--accent); font-weight: 600; }
+.conn-target { color: var(--text-secondary); }
 
 /* Action Feed */
 .action-feed { max-height: 400px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; }
@@ -448,17 +529,38 @@ onUnmounted(() => { if (pollTimer) clearInterval(pollTimer) })
 .score-value span { font-size: 16px; color: var(--text-secondary); font-weight: 400; }
 
 .report-section { display: flex; flex-direction: column; gap: 16px; }
-.summary-text { color: var(--text-secondary); line-height: 1.6; font-size: 15px; }
-.section-content { color: var(--text-secondary); line-height: 1.6; white-space: pre-wrap; }
+.report-layout { display: grid; grid-template-columns: 1fr 340px; gap: 16px; }
+.report-main { display: flex; flex-direction: column; gap: 16px; }
+.report-card {
+  background: var(--bg-card); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 24px;
+}
+.report-card h3 { margin-bottom: 12px; font-size: 16px; }
+.summary-text { color: var(--text-secondary); line-height: 1.7; font-size: 15px; }
+.section-content { color: var(--text-secondary); line-height: 1.7; white-space: pre-wrap; font-size: 14px; }
 .rec-list { padding-left: 20px; }
-.rec-list li { color: var(--text-secondary); margin-bottom: 8px; line-height: 1.5; }
+.rec-list li { color: var(--text-secondary); margin-bottom: 10px; line-height: 1.6; }
 
-/* Interview */
-.interview-form { display: flex; gap: 8px; margin-bottom: 16px; }
-.interview-form select { width: 200px; }
-.interview-form input { flex: 1; }
-.interview-response { margin-top: 12px; }
-.interview-response p { color: var(--text-secondary); line-height: 1.5; margin-top: 8px; }
+/* Interview sidebar */
+.interview-sidebar {
+  position: sticky; top: 24px; align-self: start;
+}
+.interview-panel {
+  background: var(--bg-card); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 20px;
+  display: flex; flex-direction: column; gap: 12px;
+}
+.interview-panel h3 { font-size: 15px; margin: 0; }
+.interview-panel select { width: 100%; }
+.interview-input-row { display: flex; gap: 6px; }
+.interview-input-row input { flex: 1; font-size: 13px; padding: 8px 12px; }
+.btn-sm { padding: 8px 14px; font-size: 13px; }
+.interview-response {
+  background: var(--bg-secondary); border-radius: 8px; padding: 14px;
+}
+.interview-agent-name { font-weight: 700; font-size: 13px; color: var(--accent); margin-bottom: 6px; }
+.interview-response p { color: var(--text-secondary); line-height: 1.5; font-size: 13px; margin: 0; }
+.interview-hint p { color: var(--text-secondary); font-size: 12px; line-height: 1.4; }
 
 .error-card { border-color: var(--negative); }
 .error-card h3 { color: var(--negative); margin-bottom: 8px; }
