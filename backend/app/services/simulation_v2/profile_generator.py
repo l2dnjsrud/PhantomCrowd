@@ -6,26 +6,39 @@ from app.core.config import settings
 from app.services.json_utils import extract_json
 from app.services.simulation_v2.engine import AgentProfile
 
-PROFILE_PROMPT = """Generate {count} diverse, realistic social media user personas for a simulation about this content:
+PROFILE_PROMPT = """Generate {count} diverse, realistic social media user personas for a simulation about this content.
 
-Content: {content}
+CONTENT BEING SIMULATED:
+{content}
 
-World knowledge from graph:
+KNOWLEDGE GRAPH ENTITIES AND RELATIONSHIPS:
 {graph_context}
 
+GRAPH ENTITIES (use these to ground personas in the real world):
+{entity_list}
+
 {audience_config}
+
+IMPORTANT RULES:
+1. Some personas should be DIRECTLY related to graph entities (e.g., a fan of a specific group, an employee of a company, a journalist covering the event)
+2. Include a MIX of:
+   - Hardcore fans (2-3 personas): deeply invested, will share and defend
+   - Casual observers (3-4 personas): might engage if interesting
+   - Critics/skeptics (1-2 personas): will question or challenge
+   - Industry insiders (1-2 personas): professionals in the field
+   - General public (2-3 personas): random people who see it in their feed
+3. Each persona's personality should include their SPECIFIC STANCE on the content topic
 
 Each persona must be a JSON object with:
 - "name": realistic name matching the target culture
 - "age": integer 13-65
 - "gender": "male", "female", or "non-binary"
 - "occupation": their job
-- "interests": list of 3-5 interests
-- "personality": one sentence description including their stance on the content topic
+- "interests": list of 3-5 interests (MUST relate to graph entities where applicable)
+- "personality": 2-3 sentences. Include their background, their relationship to the content topic, and their likely reaction tendency
 - "social_media_usage": "heavy", "moderate", or "light"
-
-Make them diverse: mix of fans, casual observers, critics, industry people, and general public.
-Ensure variety in age, gender, occupation, and attitude toward the content.
+- "stance": "supporter", "neutral", "critic", or "industry"
+- "related_entities": list of graph entity names this persona is connected to
 
 Return ONLY a JSON array."""
 
@@ -37,6 +50,7 @@ async def generate_profiles(
     rule_count: int = 100,
     audience_config: dict | None = None,
     language: str = "en",
+    graph_entities: list[dict] | None = None,
 ) -> tuple[list[AgentProfile], list[AgentProfile]]:
     """Generate LLM agent profiles (via API) and rule-based profiles (quick generation)."""
 
@@ -45,6 +59,15 @@ async def generate_profiles(
         config_text = f"Target audience: {json.dumps(audience_config)}"
     if language != "en":
         config_text += f"\nGenerate names appropriate for {language} culture."
+
+    # Build entity list from graph
+    entity_list_text = "No entities available"
+    if graph_entities:
+        entity_lines = []
+        for e in graph_entities[:30]:
+            desc = e.get("description", "")[:80]
+            entity_lines.append(f"- {e.get('label', e.get('name', '?'))} ({e.get('type', 'unknown')}): {desc}")
+        entity_list_text = "\n".join(entity_lines)
 
     client = AsyncOpenAI(api_key=settings.llm_api_key, base_url=settings.llm_base_url)
 
@@ -59,6 +82,7 @@ async def generate_profiles(
                 content=content[:500],
                 graph_context=graph_context[:1000],
                 audience_config=config_text,
+                entity_list=entity_list_text,
             ),
         }],
     )

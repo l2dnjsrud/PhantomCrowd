@@ -204,3 +204,9 @@ export const getCampaignReport = (id: string) =>
 
 export const interviewAgent = (id: string, agent_name: string, question: string) =>
   api.post<{ agent: string; response: string }>(`/v2/campaigns/${id}/interview`, { agent_name, question })
+
+export const uploadCampaignFile = (id: string, file: File) => {
+  const formData = new FormData()
+  formData.append('file', file)
+  return api.post<{ filename: string; chars: number; preview: string }>(`/v2/campaigns/${id}/upload`, formData)
+}

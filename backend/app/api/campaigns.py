@@ -1,7 +1,7 @@
 import asyncio
 from datetime import datetime
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
 from pydantic import BaseModel, Field
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -10,7 +10,11 @@ from sqlalchemy.orm import selectinload
 from app.core.database import get_db, async_session
 from app.models.campaign import Campaign, CampaignEntity, SimAction
 from app.services.knowledge.graph_builder import GraphBuilder
+from app.services.knowledge.file_parser import save_and_parse_upload
+from app.services.knowledge.ontology_generator import generate_ontology
+from app.services.knowledge.graph_updater import update_graph_with_actions
 from app.services.simulation_v2.profile_generator import generate_profiles
+from app.services.simulation_v2.config_generator import generate_sim_config
 from app.services.simulation_v2.engine import (
     run_simulation, get_simulation_state, Action,
 )
@@ -104,7 +108,7 @@ async def _run_campaign_pipeline(campaign_id: str):
             campaign.graph_dir = builder.working_dir
             await db.commit()
 
-            # Get graph context for agents
+            # Get graph context + entity list for agents
             graph_context = await builder.query(
                 f"Summarize all key entities and relationships about: {campaign.content[:200]}",
                 mode="hybrid",
@@ -112,7 +116,19 @@ async def _run_campaign_pipeline(campaign_id: str):
             if not graph_context:
                 graph_context = "No additional context available."
 
-            # Step 2: Generate profiles
+            graph_entities = builder.get_entities()
+
+            # Step 1.5: Generate ontology (for metadata)
+            try:
+                ontology = await generate_ontology(
+                    campaign.content,
+                    campaign.context_text or "",
+                    "marketing audience simulation",
+                )
+            except Exception:
+                ontology = None
+
+            # Step 2: Generate profiles (graph-grounded)
             campaign.status = "generating_profiles"
             await db.commit()
 
@@ -123,7 +139,20 @@ async def _run_campaign_pipeline(campaign_id: str):
                 rule_count=campaign.rule_agents,
                 audience_config=campaign.audience_config,
                 language=campaign.language,
+                graph_entities=graph_entities,
             )
+
+            # Step 2.5: Auto-generate simulation config
+            try:
+                sim_config = await generate_sim_config(
+                    content=campaign.content,
+                    entity_count=graph_data["stats"]["nodes"],
+                    edge_count=graph_data["stats"]["edges"],
+                    key_entities=[e["label"] for e in graph_entities[:10]],
+                    language=campaign.language,
+                )
+            except Exception:
+                sim_config = None
 
             # Step 3: Run simulation
             campaign.status = "simulating"
@@ -154,6 +183,13 @@ async def _run_campaign_pipeline(campaign_id: str):
                 )
                 db.add(sa)
             await db.commit()
+
+            # Step 3.5: Feedback loop — update graph with simulation results
+            if campaign.graph_dir:
+                try:
+                    update_graph_with_actions(campaign.graph_dir, actions)
+                except Exception:
+                    pass
 
             # Step 4: Generate report
             campaign.status = "reporting"
@@ -317,3 +353,40 @@ async def do_interview(
         content=campaign.content,
     )
     return {"agent": req.agent_name, "response": response}
+
+
+@router.post("/{campaign_id}/upload")
+async def upload_context_file(
+    campaign_id: str,
+    file: UploadFile = File(...),
+    db: AsyncSession = Depends(get_db),
+):
+    """Upload a file (PDF, MD, TXT) as additional context for the campaign."""
+    campaign = await db.get(Campaign, campaign_id)
+    if not campaign:
+        raise HTTPException(status_code=404, detail="Campaign not found")
+
+    allowed_ext = {".pdf", ".md", ".markdown", ".txt", ".text", ".csv"}
+    ext = "." + (file.filename or "").rsplit(".", 1)[-1].lower()
+    if ext not in allowed_ext:
+        raise HTTPException(status_code=400, detail=f"Unsupported file type: {ext}. Supported: {allowed_ext}")
+
+    content = await file.read()
+    if len(content) > 10 * 1024 * 1024:  # 10MB limit
+        raise HTTPException(status_code=400, detail="File too large (max 10MB)")
+
+    text = await save_and_parse_upload(file.filename or "upload.txt", content)
+
+    # Append to existing context
+    if campaign.context_text:
+        campaign.context_text += f"\n\n--- Uploaded: {file.filename} ---\n\n{text}"
+    else:
+        campaign.context_text = text
+
+    await db.commit()
+
+    return {
+        "filename": file.filename,
+        "chars": len(text),
+        "preview": text[:500],
+    }

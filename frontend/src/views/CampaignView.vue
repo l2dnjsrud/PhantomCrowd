@@ -54,6 +54,50 @@
       </div>
     </section>
 
+    <!-- Step 2.5: Agent Profiles Preview -->
+    <section v-if="actions.length > 0" class="card step-card">
+      <h3>Agent Profiles ({{ agentProfiles.length }})</h3>
+      <div class="profiles-grid">
+        <div v-for="p in agentProfiles.slice(0, 12)" :key="p.name" class="profile-card" @click="selectedProfile = p">
+          <div class="profile-avatar" :style="{ background: stanceColor(p.stance) }">{{ p.name.charAt(0) }}</div>
+          <div class="profile-info">
+            <strong>{{ p.name }}</strong>
+            <span class="profile-meta">{{ p.age }}y · {{ p.occupation }}</span>
+          </div>
+          <span class="stance-badge" :style="{ background: stanceColor(p.stance) + '22', color: stanceColor(p.stance) }">{{ p.stance || 'neutral' }}</span>
+        </div>
+      </div>
+      <!-- Profile detail modal -->
+      <div v-if="selectedProfile" class="profile-modal-overlay" @click.self="selectedProfile = null">
+        <div class="profile-modal">
+          <button class="modal-close" @click="selectedProfile = null">×</button>
+          <div class="profile-modal-header">
+            <div class="profile-avatar-lg" :style="{ background: stanceColor(selectedProfile.stance) }">{{ selectedProfile.name.charAt(0) }}</div>
+            <div>
+              <h3>{{ selectedProfile.name }}</h3>
+              <p>{{ selectedProfile.age }}y · {{ selectedProfile.gender }} · {{ selectedProfile.occupation }}</p>
+            </div>
+          </div>
+          <div class="profile-modal-body">
+            <div v-if="selectedProfile.personality" class="profile-field">
+              <label>Personality</label>
+              <p>{{ selectedProfile.personality }}</p>
+            </div>
+            <div v-if="selectedProfile.interests" class="profile-field">
+              <label>Interests</label>
+              <div class="tag-list">
+                <span v-for="i in selectedProfile.interests" :key="i" class="tag">{{ i }}</span>
+              </div>
+            </div>
+            <div v-if="selectedProfile.stance" class="profile-field">
+              <label>Stance</label>
+              <span class="stance-badge" :style="{ background: stanceColor(selectedProfile.stance) + '22', color: stanceColor(selectedProfile.stance) }">{{ selectedProfile.stance }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
     <!-- Step 3: Simulation -->
     <section v-if="simStatus && simStatus.status === 'running'" class="card step-card">
       <h3>{{ $t('campaign.simRunning') }}</h3>
@@ -177,6 +221,25 @@ const graphData = ref<GraphData | null>(null)
 const simStatus = ref<SimStatus | null>(null)
 const actions = ref<SimActionItem[]>([])
 const graphContainer = ref<HTMLElement | null>(null)
+
+const selectedProfile = ref<any>(null)
+
+const agentProfiles = computed(() => {
+  const profiles: Record<string, any> = {}
+  for (const a of actions.value) {
+    if (!profiles[a.agent] && a.profile) {
+      profiles[a.agent] = { name: a.agent, ...a.profile }
+    }
+  }
+  return Object.values(profiles)
+})
+
+function stanceColor(stance: string) {
+  const map: Record<string, string> = {
+    supporter: '#4ade80', critic: '#f87171', neutral: '#8888a0', industry: '#60a5fa',
+  }
+  return map[stance] || '#8888a0'
+}
 
 const selectedNode = ref<{
   id: string; label: string; type: string; description: string; color: string;
@@ -561,6 +624,53 @@ onUnmounted(() => { if (pollTimer) clearInterval(pollTimer) })
 .interview-agent-name { font-weight: 700; font-size: 13px; color: var(--accent); margin-bottom: 6px; }
 .interview-response p { color: var(--text-secondary); line-height: 1.5; font-size: 13px; margin: 0; }
 .interview-hint p { color: var(--text-secondary); font-size: 12px; line-height: 1.4; }
+
+/* Agent Profiles */
+.profiles-grid {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; max-height: 300px; overflow-y: auto;
+}
+.profile-card {
+  display: flex; align-items: center; gap: 10px; padding: 10px 12px;
+  background: var(--bg-secondary); border-radius: 8px; cursor: pointer;
+  transition: all 0.15s;
+}
+.profile-card:hover { background: var(--bg-card-hover); }
+.profile-avatar {
+  width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center;
+  justify-content: center; font-weight: 700; color: white; font-size: 14px; flex-shrink: 0;
+}
+.profile-avatar-lg {
+  width: 52px; height: 52px; border-radius: 50%; display: flex; align-items: center;
+  justify-content: center; font-weight: 700; color: white; font-size: 20px; flex-shrink: 0;
+}
+.profile-info { flex: 1; min-width: 0; }
+.profile-info strong { font-size: 13px; display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.profile-meta { font-size: 11px; color: var(--text-secondary); }
+.stance-badge { padding: 2px 8px; border-radius: 10px; font-size: 10px; font-weight: 600; text-transform: uppercase; }
+
+/* Profile Modal */
+.profile-modal-overlay {
+  position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.6); display: flex; align-items: center;
+  justify-content: center; z-index: 1000;
+}
+.profile-modal {
+  background: var(--bg-card); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 28px; width: 440px; max-width: 90vw;
+  position: relative;
+}
+.modal-close {
+  position: absolute; top: 12px; right: 16px; background: none;
+  color: var(--text-secondary); font-size: 24px; padding: 0; line-height: 1;
+}
+.profile-modal-header { display: flex; gap: 16px; align-items: center; margin-bottom: 20px; }
+.profile-modal-header h3 { margin: 0; font-size: 18px; }
+.profile-modal-header p { margin: 4px 0 0; color: var(--text-secondary); font-size: 13px; }
+.profile-modal-body { display: flex; flex-direction: column; gap: 14px; }
+.profile-field label { font-size: 11px; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 4px; }
+.profile-field p { color: var(--text-primary); line-height: 1.5; font-size: 14px; margin: 0; }
+.tag-list { display: flex; flex-wrap: wrap; gap: 6px; }
+.tag { padding: 3px 10px; background: var(--bg-secondary); border-radius: 12px; font-size: 12px; color: var(--text-secondary); }
 
 .error-card { border-color: var(--negative); }
 .error-card h3 { color: var(--negative); margin-bottom: 8px; }
