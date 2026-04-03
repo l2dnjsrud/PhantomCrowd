@@ -117,3 +117,90 @@ export const getABTest = (id: string) =>
 // Export API
 export const getExportUrl = (id: string, format: 'csv' | 'json') =>
   `/api/export/simulations/${id}/${format}`
+
+// === V2: Campaign API ===
+
+export interface CampaignCreate {
+  title: string
+  content: string
+  content_type: string
+  context_text?: string
+  audience_config?: Record<string, unknown>
+  language?: string
+  llm_agents?: number
+  rule_agents?: number
+  sim_rounds?: number
+}
+
+export interface Campaign {
+  id: string
+  title: string
+  content: string
+  content_type: string
+  status: string
+  language: string
+  llm_agents: number
+  rule_agents: number
+  sim_rounds: number
+  viral_score: number | null
+  summary: string | null
+  report: CampaignReport | null
+  created_at: string
+  completed_at: string | null
+}
+
+export interface CampaignReport {
+  viral_score: number
+  summary: string
+  sections: { title: string; content: string }[]
+  recommendations: string[]
+}
+
+export interface GraphData {
+  nodes: { id: string; label: string; type: string; description: string }[]
+  edges: { source: string; target: string; label: string; weight: number }[]
+  stats: { nodes: number; edges: number }
+}
+
+export interface SimStatus {
+  campaign_id: string
+  status: string
+  current_round: number
+  total_rounds: number
+  actions_count: number
+}
+
+export interface SimActionItem {
+  round: number
+  agent: string
+  profile: Record<string, unknown>
+  action: string
+  content: string
+  target: string
+  sentiment: string
+  score: number
+}
+
+export const createCampaign = (data: CampaignCreate) =>
+  api.post<Campaign>('/v2/campaigns/', data)
+
+export const listCampaigns = () =>
+  api.get<Campaign[]>('/v2/campaigns/')
+
+export const getCampaign = (id: string) =>
+  api.get<Campaign>(`/v2/campaigns/${id}`)
+
+export const getCampaignGraph = (id: string) =>
+  api.get<GraphData>(`/v2/campaigns/${id}/graph`)
+
+export const getCampaignSimStatus = (id: string) =>
+  api.get<SimStatus>(`/v2/campaigns/${id}/simulation/status`)
+
+export const getCampaignActions = (id: string, round?: number) =>
+  api.get<SimActionItem[]>(`/v2/campaigns/${id}/actions`, { params: round ? { round_num: round } : {} })
+
+export const getCampaignReport = (id: string) =>
+  api.get<CampaignReport>(`/v2/campaigns/${id}/report`)
+
+export const interviewAgent = (id: string, agent_name: string, question: string) =>
+  api.post<{ agent: string; response: string }>(`/v2/campaigns/${id}/interview`, { agent_name, question })

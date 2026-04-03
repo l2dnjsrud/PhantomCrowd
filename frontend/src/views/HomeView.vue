@@ -2,9 +2,66 @@
   <div class="home">
     <!-- Mode Tabs -->
     <div class="mode-tabs">
-      <button :class="{ active: mode === 'single' }" @click="mode = 'single'">Single Test</button>
+      <button :class="{ active: mode === 'campaign' }" @click="mode = 'campaign'">Campaign (v2)</button>
+      <button :class="{ active: mode === 'single' }" @click="mode = 'single'">Quick Test</button>
       <button :class="{ active: mode === 'ab' }" @click="mode = 'ab'">A/B Test</button>
     </div>
+
+    <!-- Campaign v2 -->
+    <section v-if="mode === 'campaign'" class="card create-section">
+      <h2>New Campaign (v2)</h2>
+      <p class="subtitle">Full simulation with knowledge graph, multi-agent interaction, and AI report</p>
+
+      <form @submit.prevent="startCampaign" class="form">
+        <div class="form-group">
+          <label>Campaign Title</label>
+          <input v-model="campaignForm.title" placeholder="e.g. LUNA Comeback ECLIPSE Teaser" required />
+        </div>
+
+        <div class="form-row form-row-3">
+          <div class="form-group">
+            <label>Content Type</label>
+            <select v-model="campaignForm.content_type">
+              <option value="social_post">Social Media Post</option>
+              <option value="ad_copy">Ad Copy</option>
+              <option value="product_launch">Product Launch</option>
+              <option value="press_release">Press Release</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>LLM Agents</label>
+            <select v-model.number="campaignForm.llm_agents">
+              <option :value="5">5 (Quick)</option>
+              <option :value="10">10 (Default)</option>
+              <option :value="20">20 (Deep)</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Language</label>
+            <select v-model="campaignForm.language">
+              <option value="en">English</option>
+              <option value="ko">Korean</option>
+              <option value="ja">Japanese</option>
+              <option value="zh">Chinese</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Content</label>
+          <textarea v-model="campaignForm.content" placeholder="Your ad copy, social post, press release..." rows="4" required></textarea>
+        </div>
+
+        <div class="form-group">
+          <label>Context (optional — fan posts, news, background info)</label>
+          <textarea v-model="campaignForm.context_text" placeholder="Paste additional context: fan community posts, news articles, competitor info..." rows="4"></textarea>
+        </div>
+
+        <button type="submit" class="btn-primary" :disabled="loading">
+          {{ loading ? 'Starting...' : '👻 Launch Campaign Simulation' }}
+        </button>
+      </form>
+    </section>
 
     <!-- Single Simulation -->
     <section v-if="mode === 'single'" class="card create-section">
@@ -154,9 +211,25 @@
     </section>
 
     <!-- Past Simulations -->
-    <section v-if="simulations.length || abTests.length" class="history-section">
+    <section v-if="simulations.length || abTests.length || campaigns.length" class="history-section">
       <h3>History</h3>
       <div class="simulation-list">
+        <router-link
+          v-for="c in campaigns"
+          :key="'camp-' + c.id"
+          :to="`/campaign/${c.id}`"
+          class="card sim-card"
+        >
+          <div class="sim-header">
+            <span class="sim-title">🎯 {{ c.title }}</span>
+            <span :class="`badge badge-${statusColor(c.status)}`">{{ c.status }}</span>
+          </div>
+          <div class="sim-meta">
+            <span>Campaign v2</span>
+            <span v-if="c.viral_score !== null">Viral: {{ c.viral_score }}/100</span>
+            <span>{{ formatDate(c.created_at) }}</span>
+          </div>
+        </router-link>
         <router-link
           v-for="ab in abTests"
           :key="'ab-' + ab.id"
@@ -204,16 +277,27 @@ import { reactive, ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import {
   createSimulation, listSimulations, createABTest, listABTests,
-  type Simulation, type ABTest as ABTestType,
+  createCampaign, listCampaigns,
+  type Simulation, type ABTest as ABTestType, type Campaign,
 } from '../api/client'
 
 const router = useRouter()
 
-const mode = ref<'single' | 'ab'>('single')
+const mode = ref<'campaign' | 'single' | 'ab'>('campaign')
 const loading = ref(false)
 const showTarget = ref(false)
 const simulations = ref<Simulation[]>([])
 const abTests = ref<ABTestType[]>([])
+const campaigns = ref<Campaign[]>([])
+
+const campaignForm = reactive({
+  title: '',
+  content: '',
+  content_type: 'social_post',
+  context_text: '',
+  language: 'en',
+  llm_agents: 10,
+})
 
 const form = reactive({
   title: '',
@@ -240,10 +324,21 @@ const abForm = reactive({
 })
 
 onMounted(async () => {
-  const [simRes, abRes] = await Promise.all([listSimulations(), listABTests()])
+  const [simRes, abRes, campRes] = await Promise.all([listSimulations(), listABTests(), listCampaigns()])
   simulations.value = simRes.data
   abTests.value = abRes.data
+  campaigns.value = campRes.data
 })
+
+async function startCampaign() {
+  loading.value = true
+  try {
+    const { data } = await createCampaign(campaignForm)
+    router.push(`/campaign/${data.id}`)
+  } finally {
+    loading.value = false
+  }
+}
 
 function buildAudienceConfig() {
   if (!showTarget.value) return undefined
