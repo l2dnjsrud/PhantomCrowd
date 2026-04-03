@@ -28,9 +28,9 @@ class CampaignCreate(BaseModel):
     context_text: str | None = None
     audience_config: dict | None = None
     language: str = "en"
-    llm_agents: int = Field(default=10, ge=3, le=30)
-    rule_agents: int = Field(default=50, ge=0, le=500)
-    sim_rounds: int = Field(default=5, ge=1, le=20)
+    llm_agents: int = Field(default=10, ge=3, le=100)
+    rule_agents: int = Field(default=50, ge=0, le=2000)
+    sim_rounds: int = Field(default=5, ge=1, le=50)
 
 
 class CampaignOut(BaseModel):

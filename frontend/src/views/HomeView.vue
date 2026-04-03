@@ -34,6 +34,8 @@
               <option :value="5">5 ({{ $t('common.quick') }})</option>
               <option :value="10">10 ({{ $t('common.default') }})</option>
               <option :value="20">20 ({{ $t('common.deep') }})</option>
+              <option :value="50">50</option>
+              <option :value="100">100 (Max)</option>
             </select>
           </div>
           <div class="form-group">
