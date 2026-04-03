@@ -2,71 +2,71 @@
   <div class="home">
     <!-- Mode Tabs -->
     <div class="mode-tabs">
-      <button :class="{ active: mode === 'campaign' }" @click="mode = 'campaign'">Campaign (v2)</button>
-      <button :class="{ active: mode === 'single' }" @click="mode = 'single'">Quick Test</button>
-      <button :class="{ active: mode === 'ab' }" @click="mode = 'ab'">A/B Test</button>
+      <button :class="{ active: mode === 'campaign' }" @click="mode = 'campaign'">{{ $t('tabs.campaign') }}</button>
+      <button :class="{ active: mode === 'single' }" @click="mode = 'single'">{{ $t('tabs.quickTest') }}</button>
+      <button :class="{ active: mode === 'ab' }" @click="mode = 'ab'">{{ $t('tabs.abTest') }}</button>
     </div>
 
     <!-- Campaign v2 -->
     <section v-if="mode === 'campaign'" class="card create-section">
-      <h2>New Campaign (v2)</h2>
-      <p class="subtitle">Full simulation with knowledge graph, multi-agent interaction, and AI report</p>
+      <h2>{{ $t('campaign.title') }}</h2>
+      <p class="subtitle">{{ $t('campaign.subtitle') }}</p>
 
       <form @submit.prevent="startCampaign" class="form">
         <div class="form-group">
-          <label>Campaign Title</label>
-          <input v-model="campaignForm.title" placeholder="e.g. LUNA Comeback ECLIPSE Teaser" required />
+          <label>{{ $t('campaign.form.title') }}</label>
+          <input v-model="campaignForm.title" :placeholder="$t('campaign.form.titlePlaceholder')" required />
         </div>
 
         <div class="form-row form-row-3">
           <div class="form-group">
-            <label>Content Type</label>
+            <label>{{ $t('campaign.form.contentType') }}</label>
             <select v-model="campaignForm.content_type">
-              <option value="social_post">Social Media Post</option>
-              <option value="ad_copy">Ad Copy</option>
-              <option value="product_launch">Product Launch</option>
-              <option value="press_release">Press Release</option>
+              <option value="social_post">{{ $t('contentTypes.social_post') }}</option>
+              <option value="ad_copy">{{ $t('contentTypes.ad_copy') }}</option>
+              <option value="product_launch">{{ $t('contentTypes.product_launch') }}</option>
+              <option value="press_release">{{ $t('contentTypes.press_release') }}</option>
             </select>
           </div>
           <div class="form-group">
-            <label>LLM Agents</label>
+            <label>{{ $t('campaign.form.llmAgents') }}</label>
             <select v-model.number="campaignForm.llm_agents">
-              <option :value="5">5 (Quick)</option>
-              <option :value="10">10 (Default)</option>
-              <option :value="20">20 (Deep)</option>
+              <option :value="5">5 ({{ $t('common.quick') }})</option>
+              <option :value="10">10 ({{ $t('common.default') }})</option>
+              <option :value="20">20 ({{ $t('common.deep') }})</option>
             </select>
           </div>
           <div class="form-group">
-            <label>Language</label>
+            <label>{{ $t('campaign.form.language') }}</label>
             <select v-model="campaignForm.language">
-              <option value="en">English</option>
-              <option value="ko">Korean</option>
-              <option value="ja">Japanese</option>
-              <option value="zh">Chinese</option>
+              <option value="en">{{ $t('languages.en') }}</option>
+              <option value="ko">{{ $t('languages.ko') }}</option>
+              <option value="ja">{{ $t('languages.ja') }}</option>
+              <option value="zh">{{ $t('languages.zh') }}</option>
             </select>
           </div>
         </div>
 
         <div class="form-group">
-          <label>Content</label>
-          <textarea v-model="campaignForm.content" placeholder="Your ad copy, social post, press release..." rows="4" required></textarea>
+          <label>{{ $t('campaign.form.content') }}</label>
+          <textarea v-model="campaignForm.content" :placeholder="$t('campaign.form.contentPlaceholder')" rows="4" required></textarea>
         </div>
 
         <div class="form-group">
-          <label>Context (optional — fan posts, news, background info)</label>
-          <textarea v-model="campaignForm.context_text" placeholder="Paste additional context: fan community posts, news articles, competitor info..." rows="4"></textarea>
+          <label>{{ $t('campaign.form.context') }}</label>
+          <textarea v-model="campaignForm.context_text" :placeholder="$t('campaign.form.contextPlaceholder')" rows="4"></textarea>
         </div>
 
         <button type="submit" class="btn-primary" :disabled="loading">
-          {{ loading ? 'Starting...' : '👻 Launch Campaign Simulation' }}
+          {{ loading ? $t('campaign.form.starting') : $t('campaign.form.submit') }}
         </button>
       </form>
     </section>
 
     <!-- Single Simulation -->
     <section v-if="mode === 'single'" class="card create-section">
-      <h2>New Simulation</h2>
-      <p class="subtitle">Test how your content will be received by a phantom audience</p>
+      <h2>{{ $t('simulation.title') }}</h2>
+      <p class="subtitle">{{ $t('simulation.subtitle') }}</p>
 
       <form @submit.prevent="startSimulation" class="form">
         <div class="form-group">
@@ -142,15 +142,15 @@
         </div>
 
         <button type="submit" class="btn-primary" :disabled="loading">
-          {{ loading ? 'Starting...' : '👻 Summon Phantom Audience' }}
+          {{ loading ? $t('simulation.form.starting') : $t('simulation.form.submit') }}
         </button>
       </form>
     </section>
 
     <!-- A/B Test -->
     <section v-if="mode === 'ab'" class="card create-section">
-      <h2>A/B Test</h2>
-      <p class="subtitle">Compare two content variants with the same phantom audience</p>
+      <h2>{{ $t('abTest.title') }}</h2>
+      <p class="subtitle">{{ $t('abTest.subtitle') }}</p>
 
       <form @submit.prevent="startABTest" class="form">
         <div class="form-group">
@@ -205,14 +205,14 @@
         </div>
 
         <button type="submit" class="btn-primary" :disabled="loading">
-          {{ loading ? 'Starting...' : '👻 Run A/B Test' }}
+          {{ loading ? $t('abTest.form.starting') : $t('abTest.form.submit') }}
         </button>
       </form>
     </section>
 
     <!-- Past Simulations -->
     <section v-if="simulations.length || abTests.length || campaigns.length" class="history-section">
-      <h3>History</h3>
+      <h3>{{ $t('nav.history') }}</h3>
       <div class="simulation-list">
         <router-link
           v-for="c in campaigns"

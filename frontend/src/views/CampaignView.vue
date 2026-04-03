@@ -1,6 +1,6 @@
 <template>
   <div class="campaign" v-if="campaign">
-    <router-link to="/" class="back-link">← Back</router-link>
+    <router-link to="/" class="back-link">{{ $t('nav.back') }}</router-link>
 
     <!-- Header -->
     <div class="campaign-header">
@@ -18,21 +18,21 @@
 
     <!-- Step 1: Graph Building -->
     <section v-if="campaign.status === 'graph_building'" class="card step-card">
-      <h3>Building Knowledge Graph...</h3>
-      <p>Extracting entities and relationships from your content and context.</p>
+      <h3>{{ $t('campaign.graphBuilding') }}</h3>
+      <p>{{ $t('campaign.graphBuildingDesc') }}</p>
       <div class="progress-bar"><div class="progress-bar-fill" style="width: 30%"></div></div>
     </section>
 
     <!-- Step 2: Graph Ready -->
     <section v-if="graphData && graphData.stats.nodes > 0" class="card step-card">
-      <h3>Knowledge Graph ({{ graphData.stats.nodes }} entities, {{ graphData.stats.edges }} relations)</h3>
+      <h3>{{ $t('campaign.graphTitle', { nodes: graphData.stats.nodes, edges: graphData.stats.edges }) }}</h3>
       <div ref="graphContainer" class="graph-container"></div>
     </section>
 
     <!-- Step 3: Simulation -->
     <section v-if="simStatus && simStatus.status === 'running'" class="card step-card">
-      <h3>👻 Simulation Running</h3>
-      <p>Round {{ simStatus.current_round }} / {{ simStatus.total_rounds }} | {{ simStatus.actions_count }} actions</p>
+      <h3>{{ $t('campaign.simRunning') }}</h3>
+      <p>{{ $t('campaign.simProgress', { current: simStatus.current_round, total: simStatus.total_rounds, actions: simStatus.actions_count }) }}</p>
       <div class="progress-bar">
         <div class="progress-bar-fill" :style="{ width: simProgress + '%' }"></div>
       </div>
@@ -40,7 +40,7 @@
 
     <!-- Action Feed -->
     <section v-if="actions.length > 0" class="card step-card">
-      <h3>Agent Actions ({{ actions.length }})</h3>
+      <h3>{{ $t('campaign.actionsTitle', { count: actions.length }) }}</h3>
       <div class="action-feed">
         <div v-for="(a, i) in actions.slice(0, 30)" :key="i" class="action-item" :class="`action-${a.action}`">
           <div class="action-header">
@@ -59,26 +59,26 @@
       <!-- Score Cards -->
       <div class="score-grid">
         <div class="card score-card accent">
-          <div class="score-label">Viral Score</div>
+          <div class="score-label">{{ $t('report.viralScore') }}</div>
           <div class="score-value">{{ campaign.report.viral_score }}<span>/100</span></div>
         </div>
         <div class="card score-card">
-          <div class="score-label">Agents</div>
+          <div class="score-label">{{ $t('report.agents') }}</div>
           <div class="score-value">{{ campaign.llm_agents + campaign.rule_agents }}</div>
         </div>
         <div class="card score-card">
-          <div class="score-label">Rounds</div>
+          <div class="score-label">{{ $t('report.rounds') }}</div>
           <div class="score-value">{{ campaign.sim_rounds }}</div>
         </div>
         <div class="card score-card">
-          <div class="score-label">Actions</div>
+          <div class="score-label">{{ $t('report.actions') }}</div>
           <div class="score-value">{{ actions.length }}</div>
         </div>
       </div>
 
       <!-- Summary -->
       <div class="card">
-        <h3>Executive Summary</h3>
+        <h3>{{ $t('report.summary') }}</h3>
         <p class="summary-text">{{ campaign.report.summary }}</p>
       </div>
 
@@ -90,7 +90,7 @@
 
       <!-- Recommendations -->
       <div class="card">
-        <h3>Recommendations</h3>
+        <h3>{{ $t('report.recommendations') }}</h3>
         <ul class="rec-list">
           <li v-for="rec in campaign.report.recommendations" :key="rec">{{ rec }}</li>
         </ul>
@@ -99,15 +99,15 @@
 
     <!-- Step 5: Interview -->
     <section v-if="campaign.status === 'completed'" class="card step-card">
-      <h3>💬 Interview an Agent</h3>
+      <h3>{{ $t('interview.title') }}</h3>
       <div class="interview-form">
         <select v-model="interviewAgent">
-          <option value="">Select agent...</option>
+          <option value="">{{ $t('interview.selectAgent') }}</option>
           <option v-for="name in agentNames" :key="name" :value="name">{{ name }}</option>
         </select>
-        <input v-model="interviewQuestion" placeholder="Ask them anything..." @keyup.enter="doInterview" />
+        <input v-model="interviewQuestion" :placeholder="$t('interview.placeholder')" @keyup.enter="doInterview" />
         <button class="btn-primary" @click="doInterview" :disabled="!interviewAgent || !interviewQuestion || interviewing">
-          {{ interviewing ? 'Asking...' : 'Ask' }}
+          {{ interviewing ? $t('interview.asking') : $t('interview.ask') }}
         </button>
       </div>
       <div v-if="interviewResponse" class="interview-response card">
@@ -118,15 +118,16 @@
 
     <!-- Failed -->
     <div v-if="campaign.status === 'failed'" class="card error-card">
-      <h3>Pipeline Failed</h3>
+      <h3>{{ $t('campaign.failed') }}</h3>
       <p>{{ campaign.summary }}</p>
     </div>
   </div>
-  <div v-else class="loading">Loading campaign...</div>
+  <div v-else class="loading">{{ $t('common.loading') }}</div>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useRoute } from 'vue-router'
 import * as d3 from 'd3'
 import {
@@ -151,13 +152,15 @@ const interviewAgent = interviewAgentName
 
 let pollTimer: ReturnType<typeof setInterval> | null = null
 
-const steps = [
-  { key: 'graph', label: 'Knowledge Graph' },
-  { key: 'profiles', label: 'Personas' },
-  { key: 'sim', label: 'Simulation' },
-  { key: 'report', label: 'Report' },
-  { key: 'interview', label: 'Interview' },
-]
+const { t } = useI18n()
+
+const steps = computed(() => [
+  { key: 'graph', label: t('campaign.pipeline.graph') },
+  { key: 'profiles', label: t('campaign.pipeline.personas') },
+  { key: 'sim', label: t('campaign.pipeline.simulation') },
+  { key: 'report', label: t('campaign.pipeline.report') },
+  { key: 'interview', label: t('campaign.pipeline.interview') },
+])
 
 const STATUS_ORDER = ['created', 'graph_building', 'graph_ready', 'generating_profiles', 'simulating', 'reporting', 'completed']
 
