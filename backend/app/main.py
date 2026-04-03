@@ -11,6 +11,7 @@ from app.core.database import init_db
 from app.api.simulations import router as simulations_router
 from app.api.ab_tests import router as ab_tests_router
 from app.api.export import router as export_router
+from app.api.campaigns import router as campaigns_router
 
 
 @asynccontextmanager
@@ -22,7 +23,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title="PhantomCrowd",
     description="AI Audience Simulator - Preview how your content will be received before publishing",
-    version="0.1.0",
+    version="2.0.0",
     lifespan=lifespan,
 )
 
@@ -37,6 +38,7 @@ app.add_middleware(
 app.include_router(simulations_router, prefix="/api")
 app.include_router(ab_tests_router, prefix="/api")
 app.include_router(export_router, prefix="/api")
+app.include_router(campaigns_router, prefix="/api")
 
 
 @app.get("/api/health")

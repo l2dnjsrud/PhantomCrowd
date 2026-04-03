@@ -1,8 +1,15 @@
-fastapi==0.115.0
-uvicorn[standard]==0.30.6
-openai==1.51.0
-pydantic==2.9.2
-pydantic-settings==2.5.2
-sqlalchemy==2.0.35
-aiosqlite==0.20.0
-python-multipart==0.0.12
+fastapi>=0.115.0
+uvicorn[standard]>=0.30.0
+openai>=1.51.0
+pydantic>=2.9.0
+pydantic-settings>=2.5.0
+sqlalchemy>=2.0.35
+aiosqlite>=0.20.0
+python-multipart>=0.0.12
+
+# v2: Knowledge Graph + Multi-Agent
+lightrag-hku>=1.4.0
+camel-ai>=0.2.78
+networkx>=3.0
+ollama>=0.4.0
+numpy>=2.0.0
