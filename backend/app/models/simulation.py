@@ -7,6 +7,20 @@ from sqlalchemy.orm import relationship
 from app.core.database import Base
 
 
+class ABTest(Base):
+    __tablename__ = "ab_tests"
+
+    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    title = Column(String, nullable=False)
+    status = Column(String, default="pending")  # pending, running, completed, failed
+    winner = Column(String, nullable=True)  # "A", "B", or "tie"
+    comparison = Column(JSON, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    completed_at = Column(DateTime, nullable=True)
+
+    simulations = relationship("Simulation", back_populates="ab_test")
+
+
 class Simulation(Base):
     __tablename__ = "simulations"
 
@@ -15,6 +29,8 @@ class Simulation(Base):
     content = Column(Text, nullable=False)
     content_type = Column(String, default="text")  # text, image_url, ad_copy
     audience_size = Column(Integer, default=50)
+    audience_config = Column(JSON, nullable=True)
+    language = Column(String, default="en")
     status = Column(String, default="pending")  # pending, running, completed, failed
     viral_score = Column(Float, nullable=True)
     summary = Column(Text, nullable=True)
@@ -22,6 +38,11 @@ class Simulation(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
     completed_at = Column(DateTime, nullable=True)
 
+    # A/B test support
+    ab_test_id = Column(String, ForeignKey("ab_tests.id"), nullable=True)
+    ab_variant = Column(String, nullable=True)  # "A" or "B"
+
+    ab_test = relationship("ABTest", back_populates="simulations")
     reactions = relationship("Reaction", back_populates="simulation", cascade="all, delete-orphan")
 
 

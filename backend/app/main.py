@@ -9,6 +9,8 @@ from fastapi.staticfiles import StaticFiles
 from app.core.config import settings
 from app.core.database import init_db
 from app.api.simulations import router as simulations_router
+from app.api.ab_tests import router as ab_tests_router
+from app.api.export import router as export_router
 
 
 @asynccontextmanager
@@ -33,6 +35,8 @@ app.add_middleware(
 )
 
 app.include_router(simulations_router, prefix="/api")
+app.include_router(ab_tests_router, prefix="/api")
+app.include_router(export_router, prefix="/api")
 
 
 @app.get("/api/health")

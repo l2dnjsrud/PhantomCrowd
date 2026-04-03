@@ -4,7 +4,13 @@
     <div class="sim-header">
       <router-link to="/" class="back">&larr; Back</router-link>
       <h2>{{ sim.title }}</h2>
-      <span :class="`badge badge-${statusColor(sim.status)}`">{{ sim.status }}</span>
+      <div class="header-actions">
+        <div v-if="sim.status === 'completed'" class="export-btns">
+          <a :href="exportUrl('csv')" class="btn-export">CSV</a>
+          <a :href="exportUrl('json')" class="btn-export">JSON</a>
+        </div>
+        <span :class="`badge badge-${statusColor(sim.status)}`">{{ sim.status }}</span>
+      </div>
     </div>
 
     <!-- Progress -->
@@ -96,6 +102,7 @@
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import { useSimulationStore } from '../stores/simulation'
+import { getExportUrl } from '../api/client'
 import SentimentChart from '../components/SentimentChart.vue'
 import EngagementChart from '../components/EngagementChart.vue'
 import ScoreHistogram from '../components/ScoreHistogram.vue'
@@ -138,6 +145,10 @@ function statusColor(status: string) {
   if (status === 'failed') return 'negative'
   if (status === 'running') return 'mixed'
   return 'neutral'
+}
+
+function exportUrl(format: 'csv' | 'json') {
+  return getExportUrl(route.params.id as string, format)
 }
 
 function engagementEmoji(eng: string) {
@@ -187,6 +198,33 @@ onUnmounted(() => {
 
 .sim-header h2 {
   flex: 1;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.export-btns {
+  display: flex;
+  gap: 4px;
+}
+
+.btn-export {
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  text-decoration: none;
+  color: var(--text-secondary);
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+}
+
+.btn-export:hover {
+  color: var(--accent);
+  border-color: var(--accent);
 }
 
 .progress-card {

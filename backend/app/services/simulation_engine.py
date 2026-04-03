@@ -26,7 +26,7 @@ Type: {content_type}
 Content: {content}
 
 React to this content AS THIS PERSONA. Be authentic to the persona's background, age, interests, and personality.
-
+{language_instruction}
 Return ONLY a JSON object:
 {{
   "sentiment": "positive" | "negative" | "neutral" | "mixed",
@@ -71,16 +71,30 @@ def _get_client() -> AsyncOpenAI:
     )
 
 
+LANGUAGE_MAP = {
+    "en": "English", "ko": "Korean", "ja": "Japanese", "zh": "Chinese",
+    "es": "Spanish", "fr": "French", "de": "German", "pt": "Portuguese",
+    "ar": "Arabic", "hi": "Hindi", "vi": "Vietnamese", "th": "Thai",
+}
+
+
 async def _generate_single_reaction(
     client: AsyncOpenAI,
     persona: dict,
     content: str,
     content_type: str,
+    language: str = "en",
 ) -> dict:
+    lang_name = LANGUAGE_MAP.get(language, language)
+    lang_instruction = ""
+    if language != "en":
+        lang_instruction = f"\nIMPORTANT: Write the comment in {lang_name}. The persona is a {lang_name} speaker."
+
     persona_copy = {**persona, "interests": ", ".join(persona["interests"])}
     prompt = REACTION_PROMPT.format(
         content_type=content_type,
         content=content,
+        language_instruction=lang_instruction,
         **persona_copy,
     )
 
@@ -100,9 +114,10 @@ async def _generate_batch_reactions(
     content: str,
     content_type: str,
     simulation_id: str,
+    language: str = "en",
 ) -> list[dict]:
     tasks = [
-        _generate_single_reaction(client, p, content, content_type)
+        _generate_single_reaction(client, p, content, content_type, language)
         for p in personas
     ]
     results = []
@@ -173,6 +188,7 @@ async def run_simulation(simulation_id: str, db: AsyncSession):
             content=sim.content,
             content_type=sim.content_type,
             count=sim.audience_size,
+            audience_config=sim.audience_config,
         )
 
         # Step 2: Generate reactions in batches
@@ -180,7 +196,8 @@ async def run_simulation(simulation_id: str, db: AsyncSession):
         for i in range(0, len(personas), settings.batch_size):
             batch = personas[i : i + settings.batch_size]
             batch_results = await _generate_batch_reactions(
-                client, batch, sim.content, sim.content_type, simulation_id
+                client, batch, sim.content, sim.content_type, simulation_id,
+                language=getattr(sim, "language", "en") or "en",
             )
 
             for persona, reaction in zip(batch, batch_results):

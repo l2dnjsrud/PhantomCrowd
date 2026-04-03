@@ -30,6 +30,8 @@ async def create_simulation(req: SimulationCreate, db: AsyncSession = Depends(ge
         content=req.content,
         content_type=req.content_type,
         audience_size=req.audience_size,
+        audience_config=req.audience_config,
+        language=req.language,
     )
     db.add(sim)
     await db.commit()
