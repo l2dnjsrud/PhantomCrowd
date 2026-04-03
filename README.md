@@ -15,6 +15,12 @@
 
 ---
 
+<p align="center">
+  <img src="docs/screenshots/04-campaign-graph.png" width="100%" alt="PhantomCrowd Campaign - Knowledge Graph + Agent Actions">
+</p>
+
+---
+
 ## What is PhantomCrowd?
 
 PhantomCrowd is a **multi-agent AI simulation platform** for marketing teams. It builds a knowledge graph from your content and context, spawns hundreds of AI personas that interact with each other on a simulated social network, and produces an actionable marketing report with viral predictions.
@@ -44,6 +50,31 @@ PhantomCrowd is a **multi-agent AI simulation platform** for marketing teams. It
 - **Multi-Language** -- 12 languages (Korean, Japanese, Chinese, Spanish, French, etc.)
 - **Export** -- CSV / JSON download
 - **History Comparison** -- compare past simulations side-by-side
+
+## Screenshots
+
+### Campaign Mode (v2) -- Knowledge Graph + Multi-Agent Simulation
+<p align="center">
+  <img src="docs/screenshots/01-home-campaign.png" width="80%" alt="Campaign Creation Form">
+  <br><em>Create a campaign with content + context data</em>
+</p>
+
+<p align="center">
+  <img src="docs/screenshots/04-campaign-graph.png" width="80%" alt="Knowledge Graph + Agent Actions">
+  <br><em>Knowledge graph visualization (D3.js) + real-time agent action feed</em>
+</p>
+
+<p align="center">
+  <img src="docs/screenshots/06-campaign-report.png" width="80%" alt="Marketing Report">
+  <br><em>AI-generated marketing report with viral score, segment analysis, and recommendations</em>
+</p>
+
+### Quick Test + A/B Test (v1)
+<p align="center">
+  <img src="docs/screenshots/02-home-quicktest.png" width="45%" alt="Quick Test">&nbsp;
+  <img src="docs/screenshots/03-home-abtest.png" width="45%" alt="A/B Test">
+  <br><em>Quick single simulation (left) and A/B variant comparison (right)</em>
+</p>
 
 ## Architecture
 
