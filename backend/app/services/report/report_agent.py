@@ -1,3 +1,5 @@
+"""ReportAgent with ReACT pattern: Plan → Search → Write → Reflect per section."""
+
 import json
 from collections import Counter
 
@@ -5,50 +7,115 @@ from openai import AsyncOpenAI
 from app.core.config import settings
 from app.services.json_utils import extract_json
 from app.services.simulation_v2.engine import Action
+from app.services.report.tools import (
+    graph_search, action_search, sentiment_aggregate, identify_influencers,
+    ToolResult,
+)
 
-REPORT_PROMPT = """You are a marketing analytics expert. Analyze these social media simulation results and produce a marketing report.
+# --- Phase 1: Plan ---
 
-ORIGINAL CONTENT:
-{content}
+PLAN_PROMPT = """You are a marketing report planner. Based on the simulation data below, plan a report outline.
 
-SIMULATION STATS:
-- Total agents: {total_agents}
-- Total rounds: {total_rounds}
-- Total actions: {total_actions}
+Content being analyzed: {content}
+Total agents: {total_agents} | Total rounds: {total_rounds} | Total actions: {total_actions}
+Sentiment: {sentiment_summary}
+Engagement: {engagement_summary}
+Avg Score: {avg_score:.2f}
 
-SENTIMENT DISTRIBUTION:
-{sentiment_dist}
+Create 5-7 report sections that would be most valuable for a marketing team.
+Each section should investigate a specific question about the audience reaction.
 
-ENGAGEMENT DISTRIBUTION:
-{engagement_dist}
+Return a JSON array of section objects:
+[
+  {{"title": "Section Title", "question": "What specific question should this section answer?", "tools": ["tool_name1", "tool_name2"]}}
+]
 
-AVERAGE SENTIMENT SCORE: {avg_score:.2f}
+Available tools: graph_search, action_search, sentiment_aggregate, identify_influencers
 
-VIRAL INDICATORS:
-- Share rate: {share_rate:.1f}%
-- Reply rate: {reply_rate:.1f}%
-- Like rate: {like_rate:.1f}%
-- Dislike rate: {dislike_rate:.1f}%
+Return ONLY the JSON array."""
 
-SAMPLE LLM AGENT REACTIONS (most detailed):
+# --- Phase 2: Search + Write per section ---
+
+SEARCH_PROMPT = """Based on the tool results below, what are the key findings for this section?
+
+Section: {title}
+Question: {question}
+
+Tool Results:
+{tool_results}
+
+List the 3-5 most important findings. Be specific with numbers."""
+
+WRITE_PROMPT = """Write a detailed marketing report section based on these findings.
+
+Section Title: {title}
+Question: {question}
+Key Findings: {findings}
+
+Additional context from knowledge graph:
+{graph_context}
+
+Sample agent reactions:
 {sample_reactions}
 
-SPREAD DYNAMICS:
-{spread_dynamics}
+Write 2-4 paragraphs. Be specific, use numbers, quote agent reactions when relevant.
+Focus on actionable insights for a marketing team. No generic advice."""
 
-Return a JSON object with:
-{{
-  "viral_score": <0-100>,
-  "summary": "<2-3 sentence executive summary>",
-  "sections": [
-    {{"title": "Audience Reception", "content": "<detailed analysis>"}},
-    {{"title": "Viral Potential", "content": "<spread analysis with specific numbers>"}},
-    {{"title": "Segment Analysis", "content": "<how different demographics reacted>"}},
-    {{"title": "Key Insights", "content": "<surprising findings, patterns>"}},
-    {{"title": "Recommendations", "content": "<3-5 actionable suggestions>"}}
-  ],
-  "recommendations": ["<suggestion1>", "<suggestion2>", "<suggestion3>"]
-}}"""
+# --- Phase 3: Reflect ---
+
+REFLECT_PROMPT = """Review this report section for quality. Is it specific enough? Does it use real data?
+
+Section: {title}
+Content: {content}
+
+Rate 1-10 and suggest one specific improvement. Return JSON:
+{{"score": N, "improvement": "specific suggestion", "revised": "improved version if score < 7, else empty string"}}"""
+
+# --- Phase 4: Final synthesis ---
+
+SYNTHESIS_PROMPT = """You are a senior marketing analyst. Synthesize these report sections into a final verdict.
+
+Content: {content}
+
+Sections:
+{sections_text}
+
+Influencer Analysis:
+{influencer_data}
+
+Provide:
+1. viral_score (0-100): how likely this content spreads virally
+2. summary: 2-3 sentence executive summary
+3. recommendations: 3-5 specific, actionable recommendations
+
+Return JSON:
+{{"viral_score": N, "summary": "...", "recommendations": ["...", "..."]}}"""
+
+
+async def _llm_call(prompt: str, max_tokens: int = 2048) -> str:
+    client = AsyncOpenAI(api_key=settings.llm_api_key, base_url=settings.llm_base_url)
+    response = await client.chat.completions.create(
+        model=settings.llm_analysis_model,
+        max_tokens=max_tokens,
+        messages=[{"role": "user", "content": prompt}],
+    )
+    return response.choices[0].message.content
+
+
+def _compute_stats(actions: list[Action]) -> dict:
+    sentiments = Counter(a.sentiment for a in actions if a.sentiment)
+    engagements = Counter(a.action_type for a in actions)
+    scores = [a.sentiment_score for a in actions if a.sentiment_score is not None]
+    rounds = set(a.round_num for a in actions)
+    agents = set(a.agent_name for a in actions)
+    return {
+        "total_agents": len(agents),
+        "total_rounds": len(rounds),
+        "total_actions": len(actions),
+        "sentiments": dict(sentiments),
+        "engagements": dict(engagements),
+        "avg_score": sum(scores) / len(scores) if scores else 0,
+    }
 
 
 async def generate_report(
@@ -56,84 +123,121 @@ async def generate_report(
     actions: list[Action],
     graph_context: str = "",
 ) -> dict:
-    """Generate a marketing report from simulation results."""
+    """Generate a marketing report using ReACT pattern."""
 
-    # Compute stats
-    total_actions = len(actions)
-    if total_actions == 0:
+    if not actions:
         return {"viral_score": 0, "summary": "No simulation data", "sections": [], "recommendations": []}
 
-    rounds = set(a.round_num for a in actions)
-    agents = set(a.agent_name for a in actions)
+    stats = _compute_stats(actions)
 
-    # Sentiment
-    sentiments = Counter(a.sentiment for a in actions if a.sentiment)
-    sentiment_dist = json.dumps(dict(sentiments))
-
-    # Engagement
-    engagements = Counter(a.action_type for a in actions)
-    engagement_dist = json.dumps(dict(engagements))
-
-    # Scores
-    scores = [a.sentiment_score for a in actions if a.sentiment_score is not None]
-    avg_score = sum(scores) / len(scores) if scores else 0
-
-    # Rates
-    share_rate = engagements.get("share", 0) / total_actions * 100
-    reply_rate = engagements.get("reply", 0) / total_actions * 100
-    like_rate = engagements.get("like", 0) / total_actions * 100
-    dislike_rate = engagements.get("dislike", 0) / total_actions * 100
-
-    # Sample LLM reactions (ones with actual content)
-    llm_reactions = [a for a in actions if a.content and len(a.content) > 10 and not a.content.startswith("(agent")]
-    sample_text = ""
-    for a in llm_reactions[:15]:
-        sample_text += f"[@{a.agent_name}, {a.agent_profile.get('age', '?')}y, {a.agent_profile.get('occupation', '?')}] "
-        sample_text += f"({a.action_type}, {a.sentiment} {a.sentiment_score}): {a.content[:150]}\n"
-
-    # Spread dynamics (how actions evolved over rounds)
-    spread_text = ""
-    for r in sorted(rounds):
-        round_actions = [a for a in actions if a.round_num == r]
-        round_sentiments = Counter(a.sentiment for a in round_actions if a.sentiment)
-        round_types = Counter(a.action_type for a in round_actions)
-        spread_text += f"Round {r}: {len(round_actions)} actions, sentiment={dict(round_sentiments)}, types={dict(round_types)}\n"
-
-    # Generate report via LLM
-    client = AsyncOpenAI(api_key=settings.llm_api_key, base_url=settings.llm_base_url)
-    response = await client.chat.completions.create(
-        model=settings.llm_analysis_model,
-        max_tokens=4096,
-        messages=[{
-            "role": "user",
-            "content": REPORT_PROMPT.format(
-                content=content[:500],
-                total_agents=len(agents),
-                total_rounds=len(rounds),
-                total_actions=total_actions,
-                sentiment_dist=sentiment_dist,
-                engagement_dist=engagement_dist,
-                avg_score=avg_score,
-                share_rate=share_rate,
-                reply_rate=reply_rate,
-                like_rate=like_rate,
-                dislike_rate=dislike_rate,
-                sample_reactions=sample_text,
-                spread_dynamics=spread_text,
-            ),
-        }],
+    # === PHASE 1: Plan ===
+    plan_prompt = PLAN_PROMPT.format(
+        content=content[:500],
+        total_agents=stats["total_agents"],
+        total_rounds=stats["total_rounds"],
+        total_actions=stats["total_actions"],
+        sentiment_summary=json.dumps(stats["sentiments"]),
+        engagement_summary=json.dumps(stats["engagements"]),
+        avg_score=stats["avg_score"],
     )
 
-    text = response.choices[0].message.content
-    report = extract_json(text)
+    plan_text = await _llm_call(plan_prompt, 1024)
+    try:
+        sections_plan = extract_json(plan_text)
+        if isinstance(sections_plan, dict):
+            sections_plan = [sections_plan]
+    except Exception:
+        sections_plan = [
+            {"title": "Audience Reception", "question": "How did the audience react overall?", "tools": ["sentiment_aggregate"]},
+            {"title": "Viral Potential", "question": "How likely is this content to spread?", "tools": ["action_search", "identify_influencers"]},
+            {"title": "Segment Analysis", "question": "How did different demographics react?", "tools": ["sentiment_aggregate"]},
+            {"title": "Key Insights", "question": "What unexpected patterns emerged?", "tools": ["action_search"]},
+            {"title": "Recommendations", "question": "What should the marketing team do next?", "tools": ["graph_search"]},
+        ]
 
-    # Ensure required fields
-    report.setdefault("viral_score", 50)
-    report.setdefault("summary", "Report generation completed")
-    report.setdefault("sections", [])
-    report.setdefault("recommendations", [])
+    # === PHASE 2: Search → Write → Reflect per section ===
+    completed_sections = []
+    sample_reactions = "\n".join(
+        f"@{a.agent_name}: {a.content[:120]}" for a in actions if a.content and len(a.content) > 10
+    )[:1500]
 
-    return report
+    for sec in sections_plan[:7]:  # Cap at 7 sections
+        title = sec.get("title", "Analysis")
+        question = sec.get("question", "")
+        tools = sec.get("tools", [])
+
+        # --- Search phase: run tools ---
+        tool_results: list[ToolResult] = []
+
+        for tool_name in tools:
+            if tool_name == "graph_search":
+                result = graph_search(graph_context, question)
+                tool_results.append(result)
+            elif tool_name == "action_search":
+                result = action_search(actions, {"has_content": True})
+                tool_results.append(result)
+            elif tool_name == "sentiment_aggregate":
+                # Overall
+                result = sentiment_aggregate(actions)
+                tool_results.append(result)
+                # Young segment
+                result2 = sentiment_aggregate(actions, {"age_min": 15, "age_max": 25})
+                tool_results.append(result2)
+                # Older segment
+                result3 = sentiment_aggregate(actions, {"age_min": 26, "age_max": 45})
+                tool_results.append(result3)
+            elif tool_name == "identify_influencers":
+                result = identify_influencers(actions, top_n=5)
+                tool_results.append(result)
+
+        tool_text = "\n\n".join(f"[{tr.tool}] {tr.result}" for tr in tool_results)
+
+        # --- Search synthesis ---
+        search_result = await _llm_call(SEARCH_PROMPT.format(
+            title=title, question=question, tool_results=tool_text,
+        ), 512)
+
+        # --- Write phase ---
+        section_content = await _llm_call(WRITE_PROMPT.format(
+            title=title, question=question, findings=search_result,
+            graph_context=graph_context[:500], sample_reactions=sample_reactions[:500],
+        ), 1024)
+
+        # --- Reflect phase ---
+        try:
+            reflect_text = await _llm_call(REFLECT_PROMPT.format(
+                title=title, content=section_content,
+            ), 512)
+            reflect_data = extract_json(reflect_text)
+            score = reflect_data.get("score", 7)
+            if score < 7 and reflect_data.get("revised"):
+                section_content = reflect_data["revised"]
+        except Exception:
+            pass  # Reflection failed, keep original
+
+        completed_sections.append({"title": title, "content": section_content})
+
+    # === PHASE 3: Final synthesis ===
+    influencer_result = identify_influencers(actions, top_n=5)
+    sections_text = "\n\n".join(f"## {s['title']}\n{s['content'][:300]}" for s in completed_sections)
+
+    synthesis_text = await _llm_call(SYNTHESIS_PROMPT.format(
+        content=content[:500],
+        sections_text=sections_text,
+        influencer_data=influencer_result.result,
+    ), 1024)
+
+    try:
+        synthesis = extract_json(synthesis_text)
+    except Exception:
+        synthesis = {"viral_score": 50, "summary": "Report completed", "recommendations": []}
+
+    return {
+        "viral_score": synthesis.get("viral_score", 50),
+        "summary": synthesis.get("summary", ""),
+        "sections": completed_sections,
+        "recommendations": synthesis.get("recommendations", []),
+    }
 
 
 async def interview_agent(
@@ -142,14 +246,35 @@ async def interview_agent(
     actions: list[Action],
     content: str,
 ) -> str:
-    """Interview a specific agent about their behavior in the simulation."""
+    """Interview a specific agent about their behavior, using their memory."""
     agent_actions = [a for a in actions if a.agent_name == agent_name]
     if not agent_actions:
         return f"Agent '{agent_name}' not found in simulation."
 
     profile = agent_actions[0].agent_profile
-    action_summary = "\n".join(
-        f"Round {a.round_num}: {a.action_type} - {a.content[:100]}" for a in agent_actions[:10]
+
+    # Build memory context from their actions
+    memory_lines = []
+    for a in agent_actions:
+        if a.action_type == "post":
+            memory_lines.append(f"Round {a.round_num}: I posted: \"{a.content[:100]}\"")
+        elif a.action_type == "reply":
+            memory_lines.append(f"Round {a.round_num}: I replied to @{a.target_agent}: \"{a.content[:100]}\"")
+        elif a.action_type == "share":
+            memory_lines.append(f"Round {a.round_num}: I shared @{a.target_agent}'s post")
+        elif a.action_type in ("like", "dislike"):
+            memory_lines.append(f"Round {a.round_num}: I {a.action_type}d @{a.target_agent}'s post")
+
+    # Build relationship context
+    interactions = {}
+    for a in agent_actions:
+        if a.target_agent:
+            interactions[a.target_agent] = interactions.get(a.target_agent, 0) + 1
+    relationship_text = ", ".join(f"@{k} ({v} interactions)" for k, v in sorted(interactions.items(), key=lambda x: -x[1])[:5])
+
+    # Sentiment journey
+    sentiment_journey = " → ".join(
+        f"R{a.round_num}:{a.sentiment}({a.sentiment_score})" for a in agent_actions if a.sentiment
     )
 
     client = AsyncOpenAI(api_key=settings.llm_api_key, base_url=settings.llm_base_url)
@@ -159,10 +284,14 @@ async def interview_agent(
         messages=[
             {
                 "role": "system",
-                "content": f"You are {agent_name}, {json.dumps(profile)}. "
-                           f"You participated in a social media discussion about: {content[:200]}. "
-                           f"Your actions during the simulation:\n{action_summary}\n"
-                           f"Answer the question IN CHARACTER.",
+                "content": (
+                    f"You are {agent_name}. Your profile: {json.dumps(profile)}\n\n"
+                    f"During a social media simulation about: {content[:200]}\n\n"
+                    f"YOUR MEMORY (what you did):\n" + "\n".join(memory_lines) + "\n\n"
+                    f"YOUR RELATIONSHIPS: {relationship_text}\n"
+                    f"YOUR SENTIMENT JOURNEY: {sentiment_journey}\n\n"
+                    f"Answer the question IN CHARACTER, referencing your actual actions and feelings."
+                ),
             },
             {"role": "user", "content": question},
         ],

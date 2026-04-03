@@ -9,6 +9,7 @@ from camel.models import ModelFactory
 from camel.types import ModelPlatformType
 
 from app.core.config import settings
+from app.services.simulation_v2.memory import AgentMemory
 
 
 @dataclass
@@ -49,8 +50,10 @@ def _create_model():
     )
 
 
-def _create_agent(profile: AgentProfile, content_context: str, graph_context: str) -> ChatAgent:
-    """Create a camel-ai ChatAgent with persona."""
+def _create_agent(profile: AgentProfile, content_context: str, graph_context: str, memory: AgentMemory | None = None) -> ChatAgent:
+    """Create a camel-ai ChatAgent with persona and memory."""
+    memory_context = memory.get_context_prompt() if memory else "No memory yet — this is my first interaction."
+
     system_msg = f"""You are simulating a real person on social media.
 
 YOUR IDENTITY:
@@ -61,11 +64,18 @@ Interests: {', '.join(profile.interests)}
 Personality: {profile.personality}
 Social Media Usage: {profile.social_media_usage}
 
+YOUR MEMORY:
+{memory_context}
+
 WORLD CONTEXT:
 {graph_context}
 
 You are reacting to and discussing this content on a social media platform:
 {content_context}
+
+IMPORTANT: You have memory of previous rounds. Your opinions may EVOLVE based on what others say.
+If someone you respect posts something, you might agree. If someone you disagree with posts, you might argue.
+Your sentiment can CHANGE over time. Reference your past posts and relationships when relevant.
 
 Stay in character. React authentically based on your personality, age, and interests.
 When replying to others, reference their actual words. Be natural, not robotic.
@@ -223,10 +233,16 @@ async def run_simulation(
         "actions_count": 0,
     }
 
-    # Create LLM agents
+    # Create LLM agents with memory
     agents = {}
+    memories: dict[str, AgentMemory] = {}
     for profile in llm_profiles:
-        agents[profile.name] = _create_agent(profile, content, graph_context)
+        memories[profile.name] = AgentMemory()
+        agents[profile.name] = _create_agent(profile, content, graph_context, memories[profile.name])
+
+    # Rule-based agent memories (lightweight)
+    for profile in rule_profiles:
+        memories[profile.name] = AgentMemory()
 
     all_actions: list[Action] = []
 
@@ -237,12 +253,24 @@ async def run_simulation(
 
             # LLM agents act (sequentially to avoid overwhelming Ollama)
             for profile in llm_profiles:
+                # Rebuild agent with updated memory each round
+                agents[profile.name] = _create_agent(
+                    profile, content, graph_context, memories[profile.name]
+                )
                 agent = agents[profile.name]
                 action = await asyncio.to_thread(
                     lambda p=profile, a=agent: asyncio.run(
                         _llm_agent_act(a, p, round_num, all_actions)
                     )
                 )
+
+                # Update memory
+                mem = memories[profile.name]
+                mem.record_my_action(
+                    round_num, action.action_type, action.content,
+                    action.target_agent, action.sentiment, action.sentiment_score,
+                )
+
                 round_actions.append(action)
                 simulation_states[campaign_id]["actions_count"] += 1
 
@@ -250,8 +278,21 @@ async def run_simulation(
             for profile in rule_profiles:
                 action = _rule_agent_act(profile, round_num, all_actions)
                 if action.action_type != "ignore":
+                    # Update rule-based memory too
+                    mem = memories[profile.name]
+                    mem.record_my_action(
+                        round_num, action.action_type, action.content,
+                        action.target_agent, action.sentiment, action.sentiment_score,
+                    )
                     round_actions.append(action)
                     simulation_states[campaign_id]["actions_count"] += 1
+
+            # Update all agents' "seen posts" memory from this round
+            for action in round_actions:
+                if action.content and len(action.content) > 5:
+                    for name, mem in memories.items():
+                        if name != action.agent_name:
+                            mem.record_seen_post(action.agent_name, action.content, round_num)
 
             all_actions.extend(round_actions)
 
@@ -260,8 +301,8 @@ async def run_simulation(
         simulation_states[campaign_id]["status"] = "failed"
         simulation_states[campaign_id]["error"] = str(e)
     finally:
-        # Clean up agents
         agents.clear()
+        memories.clear()
 
     return all_actions
 
