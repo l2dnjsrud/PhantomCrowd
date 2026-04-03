@@ -252,7 +252,27 @@ async function doInterview() {
   }
 }
 
-// D3 graph rendering
+// Entity type → color mapping (MiroFish style)
+const TYPE_COLORS: Record<string, string> = {
+  person: '#f87171',     // red
+  organization: '#60a5fa', // blue
+  group: '#7c5cfc',      // purple
+  event: '#fbbf24',      // yellow
+  product: '#4ade80',    // green
+  location: '#f472b6',   // pink
+  award: '#fbbf24',      // yellow
+  unknown: '#8888a0',    // gray
+}
+
+function getNodeColor(type: string): string {
+  const t = (type || 'unknown').toLowerCase()
+  for (const [key, color] of Object.entries(TYPE_COLORS)) {
+    if (t.includes(key)) return color
+  }
+  return TYPE_COLORS.unknown
+}
+
+// D3 graph rendering — enhanced MiroFish-style
 function renderGraph() {
   if (!graphContainer.value || !graphData.value || graphData.value.nodes.length === 0) return
 
@@ -260,9 +280,19 @@ function renderGraph() {
   container.innerHTML = ''
 
   const width = container.clientWidth
-  const height = 400
+  const height = 600
 
-  const svg = d3.select(container).append('svg').attr('width', width).attr('height', height)
+  const svg = d3.select(container)
+    .append('svg')
+    .attr('width', width)
+    .attr('height', height)
+
+  // Zoom + pan
+  const g = svg.append('g')
+  const zoom = d3.zoom<SVGSVGElement, unknown>()
+    .scaleExtent([0.3, 4])
+    .on('zoom', (event) => g.attr('transform', event.transform))
+  svg.call(zoom)
 
   const nodes = graphData.value.nodes.map(n => ({ ...n }))
   const links = graphData.value.edges.map(e => ({
@@ -271,41 +301,73 @@ function renderGraph() {
     label: e.label,
   }))
 
-  const simulation = d3.forceSimulation(nodes as any)
-    .force('link', d3.forceLink(links as any).id((d: any) => d.id).distance(120))
-    .force('charge', d3.forceManyBody().strength(-300))
-    .force('center', d3.forceCenter(width / 2, height / 2))
+  // Count connections per node for sizing
+  const connectionCount: Record<string, number> = {}
+  links.forEach(l => {
+    connectionCount[l.source as string] = (connectionCount[l.source as string] || 0) + 1
+    connectionCount[l.target as string] = (connectionCount[l.target as string] || 0) + 1
+  })
 
-  const link = svg.append('g')
+  const simulation = d3.forceSimulation(nodes as any)
+    .force('link', d3.forceLink(links as any).id((d: any) => d.id).distance(160))
+    .force('charge', d3.forceManyBody().strength(-500))
+    .force('center', d3.forceCenter(width / 2, height / 2))
+    .force('collision', d3.forceCollide().radius(40))
+
+  // Edge lines
+  const link = g.append('g')
     .selectAll('line')
     .data(links)
     .join('line')
-    .attr('stroke', '#2a2a3e')
+    .attr('stroke', '#3a3a5e')
     .attr('stroke-width', 1.5)
+    .attr('stroke-opacity', 0.6)
 
-  const node = svg.append('g')
+  // Edge labels
+  const edgeLabel = g.append('g')
+    .selectAll('text')
+    .data(links)
+    .join('text')
+    .text((d: any) => d.label ? d.label.substring(0, 20) : '')
+    .attr('font-size', 9)
+    .attr('fill', '#555570')
+    .attr('text-anchor', 'middle')
+
+  // Node circles — sized by connections
+  const node = g.append('g')
     .selectAll('circle')
     .data(nodes)
     .join('circle')
-    .attr('r', 8)
-    .attr('fill', '#7c5cfc')
-    .attr('stroke', '#1a1a2e')
+    .attr('r', (d: any) => Math.max(10, Math.min(25, 8 + (connectionCount[d.id] || 0) * 3)))
+    .attr('fill', (d: any) => getNodeColor(d.type))
+    .attr('stroke', '#0a0a0f')
     .attr('stroke-width', 2)
+    .attr('opacity', 0.9)
+    .style('cursor', 'grab')
     .call(d3.drag<any, any>()
       .on('start', (e, d: any) => { if (!e.active) simulation.alphaTarget(0.3).restart(); d.fx = d.x; d.fy = d.y })
       .on('drag', (e, d: any) => { d.fx = e.x; d.fy = e.y })
       .on('end', (e, d: any) => { if (!e.active) simulation.alphaTarget(0); d.fx = null; d.fy = null })
     )
 
-  const label = svg.append('g')
+  // Node hover glow
+  node.on('mouseover', function() {
+    d3.select(this).attr('stroke', '#7c5cfc').attr('stroke-width', 4)
+  }).on('mouseout', function() {
+    d3.select(this).attr('stroke', '#0a0a0f').attr('stroke-width', 2)
+  })
+
+  // Node labels
+  const label = g.append('g')
     .selectAll('text')
     .data(nodes)
     .join('text')
     .text((d: any) => d.label)
-    .attr('font-size', 11)
-    .attr('fill', '#8888a0')
-    .attr('dx', 12)
-    .attr('dy', 4)
+    .attr('font-size', 12)
+    .attr('font-weight', 600)
+    .attr('fill', '#e8e8f0')
+    .attr('text-anchor', 'middle')
+    .attr('dy', (d: any) => -(Math.max(10, 8 + (connectionCount[d.id] || 0) * 3)) - 6)
 
   simulation.on('tick', () => {
     link
@@ -313,8 +375,19 @@ function renderGraph() {
       .attr('y1', (d: any) => d.source.y)
       .attr('x2', (d: any) => d.target.x)
       .attr('y2', (d: any) => d.target.y)
+    edgeLabel
+      .attr('x', (d: any) => (d.source.x + d.target.x) / 2)
+      .attr('y', (d: any) => (d.source.y + d.target.y) / 2)
     node.attr('cx', (d: any) => d.x).attr('cy', (d: any) => d.y)
     label.attr('x', (d: any) => d.x).attr('y', (d: any) => d.y)
+  })
+
+  // Legend
+  const legendData = [...new Set(nodes.map((n: any) => n.type || 'unknown'))]
+  const legend = svg.append('g').attr('transform', `translate(${width - 150}, 20)`)
+  legendData.forEach((type, i) => {
+    legend.append('circle').attr('cx', 0).attr('cy', i * 22).attr('r', 6).attr('fill', getNodeColor(type))
+    legend.append('text').attr('x', 14).attr('y', i * 22 + 4).text(type).attr('font-size', 11).attr('fill', '#8888a0')
   })
 }
 
@@ -351,7 +424,7 @@ onUnmounted(() => { if (pollTimer) clearInterval(pollTimer) })
 .step-card p { color: var(--text-secondary); line-height: 1.5; }
 
 /* Graph */
-.graph-container { width: 100%; height: 400px; background: var(--bg-secondary); border-radius: 8px; overflow: hidden; }
+.graph-container { width: 100%; height: 600px; background: var(--bg-secondary); border-radius: 8px; overflow: hidden; }
 
 /* Action Feed */
 .action-feed { max-height: 400px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; }
