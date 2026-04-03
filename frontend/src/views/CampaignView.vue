@@ -114,7 +114,10 @@
       <div class="workbench-right">
         <!-- Knowledge Graph -->
         <div class="right-panel" v-if="graphData && graphData.stats.nodes > 0">
-          <h3>{{ $t('campaign.graphTitle', { nodes: graphData.stats.nodes, edges: graphData.stats.edges }) }}</h3>
+          <div class="panel-header">
+            <h3>{{ $t('campaign.graphTitle', { nodes: graphData.stats.nodes, edges: graphData.stats.edges }) }}</h3>
+            <router-link :to="`/campaign/${campaign.id}/graph`" class="expand-btn" title="Full screen graph">⛶</router-link>
+          </div>
           <div ref="graphContainer" class="graph-container-sm"></div>
           <!-- Node detail -->
           <div v-if="selectedNode" class="node-detail-card">
@@ -600,6 +603,10 @@ onUnmounted(() => { if (pollTimer) clearInterval(pollTimer) })
 /* Right panels */
 .right-panel { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; }
 .right-panel h3 { font-size: 14px; margin-bottom: 10px; }
+.panel-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+.panel-header h3 { margin-bottom: 0; }
+.expand-btn { color: var(--text-secondary); text-decoration: none; font-size: 18px; padding: 2px 6px; border-radius: 4px; }
+.expand-btn:hover { color: var(--accent); background: var(--bg-secondary); }
 .hint-text { color: var(--text-secondary); font-size: 12px; }
 
 /* Graph (compact for right panel) */
