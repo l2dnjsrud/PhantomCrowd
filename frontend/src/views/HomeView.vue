@@ -59,6 +59,20 @@
           <textarea v-model="campaignForm.context_text" :placeholder="$t('campaign.form.contextPlaceholder')" rows="4"></textarea>
         </div>
 
+        <div class="form-group">
+          <label>
+            {{ contextFileLabel }}
+            <span class="file-hint">PDF, MD, TXT (max 10MB)</span>
+          </label>
+          <div class="file-upload-row">
+            <input type="file" ref="fileInput" accept=".pdf,.md,.markdown,.txt,.text,.csv" @change="handleFileSelect" class="file-input" />
+            <button type="button" class="btn-upload" @click="($refs.fileInput as HTMLInputElement)?.click()">
+              {{ selectedFile ? selectedFile.name : uploadBtnLabel }}
+            </button>
+            <span v-if="selectedFile" class="file-selected">{{ (selectedFile.size / 1024).toFixed(0) }}KB</span>
+          </div>
+        </div>
+
         <button type="submit" class="btn-primary" :disabled="loading">
           {{ loading ? $t('campaign.form.starting') : $t('campaign.form.submit') }}
         </button>
@@ -275,17 +289,31 @@
 </template>
 
 <script setup lang="ts">
-import { reactive, ref, onMounted } from 'vue'
+import { reactive, ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import {
   createSimulation, listSimulations, createABTest, listABTests,
-  createCampaign, listCampaigns,
+  createCampaign, listCampaigns, uploadCampaignFile,
   type Simulation, type ABTest as ABTestType, type Campaign,
 } from '../api/client'
 
 const router = useRouter()
 
+const { t, locale } = useI18n()
 const mode = ref<'campaign' | 'single' | 'ab'>('campaign')
+const selectedFile = ref<File | null>(null)
+const fileInput = ref<HTMLInputElement | null>(null)
+
+const contextFileLabel = computed(() => locale.value === 'ko' ? '컨텍스트 파일 업로드 (선택)' : 'Upload Context File (optional)')
+const uploadBtnLabel = computed(() => locale.value === 'ko' ? '파일 선택...' : 'Choose file...')
+
+function handleFileSelect(e: Event) {
+  const input = e.target as HTMLInputElement
+  if (input.files && input.files[0]) {
+    selectedFile.value = input.files[0]
+  }
+}
 const loading = ref(false)
 const showTarget = ref(false)
 const simulations = ref<Simulation[]>([])
@@ -336,6 +364,16 @@ async function startCampaign() {
   loading.value = true
   try {
     const { data } = await createCampaign(campaignForm)
+
+    // Upload file if selected
+    if (selectedFile.value) {
+      try {
+        await uploadCampaignFile(data.id, selectedFile.value)
+      } catch {
+        // File upload failed but campaign still starts
+      }
+    }
+
     router.push(`/campaign/${data.id}`)
   } finally {
     loading.value = false
@@ -395,6 +433,16 @@ function formatDate(dateStr: string) {
   flex-direction: column;
   gap: 32px;
 }
+
+.file-upload-row { display: flex; align-items: center; gap: 8px; }
+.file-input { display: none; }
+.btn-upload {
+  padding: 8px 16px; background: var(--bg-secondary); color: var(--text-secondary);
+  border: 1px dashed var(--border); border-radius: 8px; font-size: 13px; cursor: pointer;
+}
+.btn-upload:hover { border-color: var(--accent); color: var(--accent); }
+.file-selected { font-size: 12px; color: var(--text-secondary); }
+.file-hint { font-size: 10px; color: var(--text-secondary); font-weight: 400; text-transform: none; letter-spacing: 0; margin-left: 8px; }
 
 .mode-tabs {
   display: flex;
