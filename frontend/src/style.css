@@ -1,0 +1,127 @@
+:root {
+  --bg-primary: #0a0a0f;
+  --bg-secondary: #12121a;
+  --bg-card: #1a1a2e;
+  --bg-card-hover: #22223a;
+  --text-primary: #e8e8f0;
+  --text-secondary: #8888a0;
+  --accent: #7c5cfc;
+  --accent-hover: #9b7fff;
+  --positive: #4ade80;
+  --negative: #f87171;
+  --neutral: #fbbf24;
+  --mixed: #60a5fa;
+  --border: #2a2a3e;
+  --radius: 12px;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  min-height: 100vh;
+}
+
+#app {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+button {
+  cursor: pointer;
+  border: none;
+  border-radius: var(--radius);
+  font-size: 14px;
+  font-weight: 600;
+  transition: all 0.2s;
+}
+
+.btn-primary {
+  background: var(--accent);
+  color: white;
+  padding: 12px 24px;
+}
+
+.btn-primary:hover {
+  background: var(--accent-hover);
+  transform: translateY(-1px);
+}
+
+.btn-primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 24px;
+  transition: all 0.2s;
+}
+
+.card:hover {
+  background: var(--bg-card-hover);
+}
+
+input, textarea, select {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text-primary);
+  padding: 12px 16px;
+  font-size: 14px;
+  width: 100%;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+input:focus, textarea:focus, select:focus {
+  border-color: var(--accent);
+}
+
+textarea {
+  resize: vertical;
+  min-height: 120px;
+}
+
+.sentiment-positive { color: var(--positive); }
+.sentiment-negative { color: var(--negative); }
+.sentiment-neutral { color: var(--neutral); }
+.sentiment-mixed { color: var(--mixed); }
+
+.badge {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.badge-positive { background: rgba(74, 222, 128, 0.15); color: var(--positive); }
+.badge-negative { background: rgba(248, 113, 113, 0.15); color: var(--negative); }
+.badge-neutral { background: rgba(251, 191, 36, 0.15); color: var(--neutral); }
+.badge-mixed { background: rgba(96, 165, 250, 0.15); color: var(--mixed); }
+
+.progress-bar {
+  width: 100%;
+  height: 6px;
+  background: var(--bg-secondary);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.progress-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent), var(--accent-hover));
+  border-radius: 3px;
+  transition: width 0.3s ease;
+}

@@ -1,0 +1,215 @@
+import json
+import asyncio
+from datetime import datetime
+
+import anthropic
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.core.config import settings
+from app.models.simulation import Simulation, Reaction
+from app.services.persona_generator import generate_personas
+
+REACTION_PROMPT = """You are simulating a real person's reaction to content on social media.
+
+YOUR PERSONA:
+Name: {name}
+Age: {age}
+Gender: {gender}
+Occupation: {occupation}
+Interests: {interests}
+Personality: {personality}
+Social Media Usage: {social_media_usage}
+
+CONTENT TO REACT TO:
+Type: {content_type}
+Content: {content}
+
+React to this content AS THIS PERSONA. Be authentic to the persona's background, age, interests, and personality.
+
+Return ONLY a JSON object:
+{{
+  "sentiment": "positive" | "negative" | "neutral" | "mixed",
+  "sentiment_score": <float from -1.0 to 1.0>,
+  "comment": "<a realistic comment this person would write, in their natural voice and language style>",
+  "engagement": "like" | "share" | "ignore" | "dislike",
+  "reasoning": "<brief internal reasoning for their reaction>"
+}}"""
+
+ANALYSIS_PROMPT = """Analyze the following audience simulation results and provide a summary.
+
+Content: {content}
+
+Total Reactions: {total}
+Sentiment Distribution: {sentiment_dist}
+Engagement Distribution: {engagement_dist}
+Average Sentiment Score: {avg_score:.2f}
+
+Sample Comments:
+{sample_comments}
+
+Provide:
+1. A concise summary (2-3 sentences) of overall audience reception
+2. A viral score from 0-100 (how likely this content will spread)
+3. 3-5 actionable suggestions to improve the content
+
+Return ONLY a JSON object:
+{{
+  "summary": "<summary>",
+  "viral_score": <0-100>,
+  "suggestions": ["<suggestion1>", "<suggestion2>", ...]
+}}"""
+
+# In-memory progress tracking
+simulation_progress: dict[str, dict] = {}
+
+
+async def _generate_single_reaction(
+    client: anthropic.AsyncAnthropic,
+    persona: dict,
+    content: str,
+    content_type: str,
+) -> dict:
+    prompt = REACTION_PROMPT.format(
+        content_type=content_type,
+        content=content,
+        **persona,
+        interests=", ".join(persona["interests"]),
+    )
+
+    response = await client.messages.create(
+        model=settings.persona_model,
+        max_tokens=1024,
+        messages=[{"role": "user", "content": prompt}],
+    )
+
+    text = response.content[0].text.strip()
+    if text.startswith("```"):
+        text = text.split("\n", 1)[1].rsplit("```", 1)[0]
+
+    return json.loads(text)
+
+
+async def _generate_batch_reactions(
+    client: anthropic.AsyncAnthropic,
+    personas: list[dict],
+    content: str,
+    content_type: str,
+    simulation_id: str,
+) -> list[dict]:
+    tasks = [
+        _generate_single_reaction(client, p, content, content_type)
+        for p in personas
+    ]
+    results = []
+    for coro in asyncio.as_completed(tasks):
+        result = await coro
+        results.append(result)
+        if simulation_id in simulation_progress:
+            simulation_progress[simulation_id]["completed"] += 1
+    return results
+
+
+async def _analyze_results(
+    client: anthropic.AsyncAnthropic,
+    content: str,
+    reactions: list[dict],
+) -> dict:
+    sentiment_dist = {}
+    engagement_dist = {}
+    scores = []
+
+    for r in reactions:
+        sentiment_dist[r["sentiment"]] = sentiment_dist.get(r["sentiment"], 0) + 1
+        engagement_dist[r["engagement"]] = engagement_dist.get(r["engagement"], 0) + 1
+        scores.append(r["sentiment_score"])
+
+    avg_score = sum(scores) / len(scores) if scores else 0
+    sample_comments = "\n".join(
+        f"- [{r['sentiment']}] {r['comment']}" for r in reactions[:10]
+    )
+
+    prompt = ANALYSIS_PROMPT.format(
+        content=content[:500],
+        total=len(reactions),
+        sentiment_dist=json.dumps(sentiment_dist),
+        engagement_dist=json.dumps(engagement_dist),
+        avg_score=avg_score,
+        sample_comments=sample_comments,
+    )
+
+    response = await client.messages.create(
+        model=settings.analysis_model,
+        max_tokens=2048,
+        messages=[{"role": "user", "content": prompt}],
+    )
+
+    text = response.content[0].text.strip()
+    if text.startswith("```"):
+        text = text.split("\n", 1)[1].rsplit("```", 1)[0]
+
+    return json.loads(text)
+
+
+async def run_simulation(simulation_id: str, db: AsyncSession):
+    sim = await db.get(Simulation, simulation_id)
+    if not sim:
+        return
+
+    sim.status = "running"
+    await db.commit()
+
+    simulation_progress[simulation_id] = {
+        "total": sim.audience_size,
+        "completed": 0,
+    }
+
+    try:
+        client = anthropic.AsyncAnthropic(api_key=settings.anthropic_api_key)
+
+        # Step 1: Generate personas
+        personas = await generate_personas(
+            content=sim.content,
+            content_type=sim.content_type,
+            count=sim.audience_size,
+        )
+
+        # Step 2: Generate reactions in batches
+        all_reactions = []
+        for i in range(0, len(personas), settings.batch_size):
+            batch = personas[i : i + settings.batch_size]
+            batch_results = await _generate_batch_reactions(
+                client, batch, sim.content, sim.content_type, simulation_id
+            )
+
+            for persona, reaction in zip(batch, batch_results):
+                reaction_obj = Reaction(
+                    simulation_id=simulation_id,
+                    persona_name=persona["name"],
+                    persona_profile=persona,
+                    sentiment=reaction["sentiment"],
+                    sentiment_score=reaction["sentiment_score"],
+                    comment=reaction["comment"],
+                    engagement=reaction["engagement"],
+                    reasoning=reaction.get("reasoning"),
+                )
+                db.add(reaction_obj)
+                all_reactions.append(reaction)
+
+            await db.commit()
+
+        # Step 3: Analyze results
+        analysis = await _analyze_results(client, sim.content, all_reactions)
+
+        sim.viral_score = analysis["viral_score"]
+        sim.summary = analysis["summary"]
+        sim.suggestions = analysis["suggestions"]
+        sim.status = "completed"
+        sim.completed_at = datetime.utcnow()
+        await db.commit()
+
+    except Exception as e:
+        sim.status = "failed"
+        sim.summary = str(e)
+        await db.commit()
+    finally:
+        simulation_progress.pop(simulation_id, None)
