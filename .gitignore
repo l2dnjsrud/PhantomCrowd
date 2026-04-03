@@ -6,3 +6,5 @@ data/
 node_modules/
 dist/
 .vite/
+.venv/
+test-results/
