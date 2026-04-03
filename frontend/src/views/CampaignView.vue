@@ -1,9 +1,8 @@
 <template>
   <div class="campaign" v-if="campaign">
-    <router-link to="/" class="back-link">{{ $t('nav.back') }}</router-link>
-
-    <!-- Header -->
-    <div class="campaign-header">
+    <!-- Top bar -->
+    <div class="top-bar">
+      <router-link to="/" class="back-link">{{ $t('nav.back') }}</router-link>
       <h1>{{ campaign.title }}</h1>
       <span :class="`badge badge-${statusColor(campaign.status)}`">{{ campaign.status }}</span>
     </div>
@@ -16,189 +15,195 @@
       </div>
     </div>
 
-    <!-- Step 1: Graph Building -->
-    <section v-if="campaign.status === 'graph_building'" class="card step-card">
-      <h3>{{ $t('campaign.graphBuilding') }}</h3>
-      <p>{{ $t('campaign.graphBuildingDesc') }}</p>
-      <div class="progress-bar"><div class="progress-bar-fill" style="width: 30%"></div></div>
-    </section>
+    <!-- MAIN 2-PANEL LAYOUT -->
+    <div class="workbench">
+      <!-- LEFT: Main content area -->
+      <div class="workbench-left">
 
-    <!-- Step 2: Graph Ready -->
-    <section v-if="graphData && graphData.stats.nodes > 0" class="graph-section">
-      <h3>{{ $t('campaign.graphTitle', { nodes: graphData.stats.nodes, edges: graphData.stats.edges }) }}</h3>
-      <div class="graph-layout">
-        <div class="graph-main">
-          <div ref="graphContainer" class="graph-container"></div>
+        <!-- Progress (during pipeline) -->
+        <div v-if="campaign.status === 'graph_building'" class="card step-card">
+          <h3>{{ $t('campaign.graphBuilding') }}</h3>
+          <p>{{ $t('campaign.graphBuildingDesc') }}</p>
+          <div class="progress-bar"><div class="progress-bar-fill" style="width: 30%"></div></div>
         </div>
-        <div class="graph-sidebar" v-if="selectedNode">
-          <div class="node-detail-card">
-            <div class="node-detail-header">
-              <span class="node-type-badge" :style="{ background: selectedNode.color }">{{ selectedNode.type }}</span>
-              <h4>{{ selectedNode.label }}</h4>
-            </div>
-            <div v-if="selectedNode.description" class="node-description">
-              {{ selectedNode.description }}
-            </div>
-            <div class="node-connections">
-              <h5>Connections</h5>
-              <div v-for="conn in selectedNode.connections" :key="conn.target" class="connection-item">
-                <span class="conn-label">{{ conn.label }}</span>
-                <span class="conn-target">→ {{ conn.target }}</span>
+
+        <div v-if="simStatus && simStatus.status === 'running'" class="card step-card">
+          <h3>{{ $t('campaign.simRunning') }}</h3>
+          <p>{{ $t('campaign.simProgress', { current: simStatus.current_round, total: simStatus.total_rounds, actions: simStatus.actions_count }) }}</p>
+          <div class="progress-bar"><div class="progress-bar-fill" :style="{ width: simProgress + '%' }"></div></div>
+        </div>
+
+        <!-- Agent Profiles -->
+        <div v-if="agentProfiles.length > 0" class="card step-card">
+          <h3>Agent Profiles ({{ agentProfiles.length }})</h3>
+          <div class="profiles-grid">
+            <div v-for="p in agentProfiles.slice(0, 12)" :key="p.name" class="profile-card" @click="selectedProfile = p">
+              <div class="profile-avatar" :style="{ background: stanceColor(p.stance) }">{{ p.name.charAt(0) }}</div>
+              <div class="profile-info">
+                <strong>{{ p.name }}</strong>
+                <span class="profile-meta">{{ p.age }}y · {{ p.occupation }}</span>
               </div>
+              <span class="stance-badge" :style="{ background: stanceColor(p.stance) + '22', color: stanceColor(p.stance) }">{{ p.stance || 'neutral' }}</span>
             </div>
           </div>
         </div>
-        <div class="graph-sidebar graph-sidebar-empty" v-else>
-          <p>Click a node to see details</p>
-        </div>
-      </div>
-    </section>
 
-    <!-- Step 2.5: Agent Profiles Preview -->
-    <section v-if="actions.length > 0" class="card step-card">
-      <h3>Agent Profiles ({{ agentProfiles.length }})</h3>
-      <div class="profiles-grid">
-        <div v-for="p in agentProfiles.slice(0, 12)" :key="p.name" class="profile-card" @click="selectedProfile = p">
-          <div class="profile-avatar" :style="{ background: stanceColor(p.stance) }">{{ p.name.charAt(0) }}</div>
-          <div class="profile-info">
-            <strong>{{ p.name }}</strong>
-            <span class="profile-meta">{{ p.age }}y · {{ p.occupation }}</span>
-          </div>
-          <span class="stance-badge" :style="{ background: stanceColor(p.stance) + '22', color: stanceColor(p.stance) }">{{ p.stance || 'neutral' }}</span>
-        </div>
-      </div>
-      <!-- Profile detail modal -->
-      <div v-if="selectedProfile" class="profile-modal-overlay" @click.self="selectedProfile = null">
-        <div class="profile-modal">
-          <button class="modal-close" @click="selectedProfile = null">×</button>
-          <div class="profile-modal-header">
-            <div class="profile-avatar-lg" :style="{ background: stanceColor(selectedProfile.stance) }">{{ selectedProfile.name.charAt(0) }}</div>
-            <div>
-              <h3>{{ selectedProfile.name }}</h3>
-              <p>{{ selectedProfile.age }}y · {{ selectedProfile.gender }} · {{ selectedProfile.occupation }}</p>
-            </div>
-          </div>
-          <div class="profile-modal-body">
-            <div v-if="selectedProfile.personality" class="profile-field">
-              <label>Personality</label>
-              <p>{{ selectedProfile.personality }}</p>
-            </div>
-            <div v-if="selectedProfile.interests" class="profile-field">
-              <label>Interests</label>
-              <div class="tag-list">
-                <span v-for="i in selectedProfile.interests" :key="i" class="tag">{{ i }}</span>
+        <!-- Action Feed -->
+        <div v-if="actions.length > 0" class="card step-card">
+          <h3>{{ $t('campaign.actionsTitle', { count: actions.length }) }}</h3>
+          <div class="action-feed">
+            <div v-for="(a, i) in actions.slice(0, 30)" :key="i" class="action-item" :class="`action-${a.action}`">
+              <div class="action-header">
+                <strong>@{{ a.agent }}</strong>
+                <span class="action-type">{{ actionEmoji(a.action) }} {{ a.action }}</span>
+                <span :class="`badge badge-${a.sentiment}`">{{ a.sentiment }} {{ a.score.toFixed(1) }}</span>
               </div>
-            </div>
-            <div v-if="selectedProfile.stance" class="profile-field">
-              <label>Stance</label>
-              <span class="stance-badge" :style="{ background: stanceColor(selectedProfile.stance) + '22', color: stanceColor(selectedProfile.stance) }">{{ selectedProfile.stance }}</span>
+              <p v-if="a.content" class="action-content">{{ a.content }}</p>
+              <p v-if="a.target" class="action-target">→ @{{ a.target }}</p>
             </div>
           </div>
         </div>
-      </div>
-    </section>
 
-    <!-- Step 3: Simulation -->
-    <section v-if="simStatus && simStatus.status === 'running'" class="card step-card">
-      <h3>{{ $t('campaign.simRunning') }}</h3>
-      <p>{{ $t('campaign.simProgress', { current: simStatus.current_round, total: simStatus.total_rounds, actions: simStatus.actions_count }) }}</p>
-      <div class="progress-bar">
-        <div class="progress-bar-fill" :style="{ width: simProgress + '%' }"></div>
-      </div>
-    </section>
-
-    <!-- Action Feed -->
-    <section v-if="actions.length > 0" class="card step-card">
-      <h3>{{ $t('campaign.actionsTitle', { count: actions.length }) }}</h3>
-      <div class="action-feed">
-        <div v-for="(a, i) in actions.slice(0, 30)" :key="i" class="action-item" :class="`action-${a.action}`">
-          <div class="action-header">
-            <strong>@{{ a.agent }}</strong>
-            <span class="action-type">{{ actionEmoji(a.action) }} {{ a.action }}</span>
-            <span :class="`badge badge-${a.sentiment}`">{{ a.sentiment }} {{ a.score.toFixed(1) }}</span>
+        <!-- Report (when complete) -->
+        <template v-if="campaign.report">
+          <div class="score-grid">
+            <div class="card score-card accent">
+              <div class="score-label">{{ $t('report.viralScore') }}</div>
+              <div class="score-value">{{ campaign.report.viral_score }}<span>/100</span></div>
+            </div>
+            <div class="card score-card">
+              <div class="score-label">{{ $t('report.agents') }}</div>
+              <div class="score-value">{{ campaign.llm_agents + campaign.rule_agents }}</div>
+            </div>
+            <div class="card score-card">
+              <div class="score-label">{{ $t('report.rounds') }}</div>
+              <div class="score-value">{{ campaign.sim_rounds }}</div>
+            </div>
+            <div class="card score-card">
+              <div class="score-label">{{ $t('report.actions') }}</div>
+              <div class="score-value">{{ actions.length }}</div>
+            </div>
           </div>
-          <p v-if="a.content" class="action-content">{{ a.content }}</p>
-          <p v-if="a.target" class="action-target">→ @{{ a.target }}</p>
-        </div>
-      </div>
-    </section>
 
-    <!-- Step 4: Report + Interview (2-panel layout) -->
-    <section v-if="campaign.report" class="report-section">
-      <!-- Score Cards -->
-      <div class="score-grid">
-        <div class="card score-card accent">
-          <div class="score-label">{{ $t('report.viralScore') }}</div>
-          <div class="score-value">{{ campaign.report.viral_score }}<span>/100</span></div>
-        </div>
-        <div class="card score-card">
-          <div class="score-label">{{ $t('report.agents') }}</div>
-          <div class="score-value">{{ campaign.llm_agents + campaign.rule_agents }}</div>
-        </div>
-        <div class="card score-card">
-          <div class="score-label">{{ $t('report.rounds') }}</div>
-          <div class="score-value">{{ campaign.sim_rounds }}</div>
-        </div>
-        <div class="card score-card">
-          <div class="score-label">{{ $t('report.actions') }}</div>
-          <div class="score-value">{{ actions.length }}</div>
-        </div>
-      </div>
-
-      <!-- 2-panel: Report (left) + Interview (right) -->
-      <div class="report-layout">
-        <div class="report-main">
-          <!-- Summary -->
           <div class="report-card">
             <h3>{{ $t('report.summary') }}</h3>
             <p class="summary-text">{{ campaign.report.summary }}</p>
           </div>
 
-          <!-- Report Sections -->
           <div v-for="sec in campaign.report.sections" :key="sec.title" class="report-card">
             <h3>{{ sec.title }}</h3>
             <p class="section-content">{{ sec.content }}</p>
           </div>
 
-          <!-- Recommendations -->
           <div class="report-card">
             <h3>{{ $t('report.recommendations') }}</h3>
             <ul class="rec-list">
               <li v-for="rec in campaign.report.recommendations" :key="rec">{{ rec }}</li>
             </ul>
           </div>
+        </template>
+
+        <!-- Failed -->
+        <div v-if="campaign.status === 'failed'" class="card error-card">
+          <h3>{{ $t('campaign.failed') }}</h3>
+          <p>{{ campaign.summary }}</p>
+        </div>
+      </div>
+
+      <!-- RIGHT: Graph + Interview panel (always visible) -->
+      <div class="workbench-right">
+        <!-- Knowledge Graph -->
+        <div class="right-panel" v-if="graphData && graphData.stats.nodes > 0">
+          <h3>{{ $t('campaign.graphTitle', { nodes: graphData.stats.nodes, edges: graphData.stats.edges }) }}</h3>
+          <div ref="graphContainer" class="graph-container-sm"></div>
+          <!-- Node detail -->
+          <div v-if="selectedNode" class="node-detail-card">
+            <div class="node-detail-header">
+              <span class="node-type-badge" :style="{ background: selectedNode.color }">{{ selectedNode.type }}</span>
+              <h4>{{ selectedNode.label }}</h4>
+            </div>
+            <div v-if="selectedNode.description" class="node-description">{{ selectedNode.description }}</div>
+            <div class="node-connections">
+              <div v-for="conn in selectedNode.connections" :key="conn.target" class="connection-item">
+                <span class="conn-label">{{ conn.label }}</span>
+                <span class="conn-target">→ {{ conn.target }}</span>
+              </div>
+            </div>
+          </div>
+          <p v-else class="hint-text">Click a node to see details</p>
         </div>
 
-        <!-- Interview sidebar -->
-        <div class="interview-sidebar" v-if="campaign.status === 'completed'">
-          <div class="interview-panel">
-            <h3>{{ $t('interview.title') }}</h3>
+        <!-- Interview Panel -->
+        <div class="right-panel" v-if="campaign.status === 'completed'">
+          <h3>{{ $t('interview.title') }}</h3>
+
+          <!-- Tab: Agent Interview / Report Chat -->
+          <div class="chat-tabs">
+            <button :class="{ active: chatMode === 'interview' }" @click="chatMode = 'interview'">Agent Interview</button>
+            <button :class="{ active: chatMode === 'report' }" @click="chatMode = 'report'">Report Chat</button>
+          </div>
+
+          <template v-if="chatMode === 'interview'">
             <select v-model="interviewAgent">
               <option value="">{{ $t('interview.selectAgent') }}</option>
               <option v-for="name in agentNames" :key="name" :value="name">{{ name }}</option>
             </select>
-            <div class="interview-input-row">
-              <input v-model="interviewQuestion" :placeholder="$t('interview.placeholder')" @keyup.enter="doInterview" />
-              <button class="btn-primary btn-sm" @click="doInterview" :disabled="!interviewAgent || !interviewQuestion || interviewing">
-                {{ interviewing ? '...' : $t('interview.ask') }}
-              </button>
+          </template>
+
+          <!-- Chat history -->
+          <div class="chat-history">
+            <div v-for="(msg, i) in chatHistory" :key="i" :class="['chat-msg', msg.role]">
+              <div class="chat-sender">{{ msg.role === 'user' ? 'You' : msg.sender }}</div>
+              <p>{{ msg.content }}</p>
             </div>
-            <div v-if="interviewResponse" class="interview-response">
-              <div class="interview-agent-name">@{{ interviewAgent }}</div>
-              <p>{{ interviewResponse }}</p>
-            </div>
-            <div v-else class="interview-hint">
-              <p>Select an agent and ask them about their reactions during the simulation.</p>
+          </div>
+
+          <!-- Input -->
+          <div class="chat-input-row">
+            <input v-model="chatInput" :placeholder="chatMode === 'interview' ? $t('interview.placeholder') : 'Ask about the report...'" @keyup.enter="sendChat" />
+            <button class="btn-primary btn-sm" @click="sendChat" :disabled="!chatInput || chatLoading">
+              {{ chatLoading ? '...' : $t('interview.ask') }}
+            </button>
+          </div>
+        </div>
+
+        <!-- Timeline (workflow log) -->
+        <div class="right-panel timeline-panel" v-if="campaign.status !== 'created'">
+          <h3>Pipeline Timeline</h3>
+          <div class="timeline">
+            <div v-for="(event, i) in timelineEvents" :key="i" :class="['timeline-item', { done: event.done, active: event.active }]">
+              <div class="timeline-dot"></div>
+              <div class="timeline-content">
+                <strong>{{ event.label }}</strong>
+                <span v-if="event.detail" class="timeline-detail">{{ event.detail }}</span>
+              </div>
             </div>
           </div>
         </div>
       </div>
-    </section>
+    </div>
 
-    <!-- Failed -->
-    <div v-if="campaign.status === 'failed'" class="card error-card">
-      <h3>{{ $t('campaign.failed') }}</h3>
-      <p>{{ campaign.summary }}</p>
+    <!-- Profile Modal -->
+    <div v-if="selectedProfile" class="profile-modal-overlay" @click.self="selectedProfile = null">
+      <div class="profile-modal">
+        <button class="modal-close" @click="selectedProfile = null">×</button>
+        <div class="profile-modal-header">
+          <div class="profile-avatar-lg" :style="{ background: stanceColor(selectedProfile.stance) }">{{ selectedProfile.name.charAt(0) }}</div>
+          <div>
+            <h3>{{ selectedProfile.name }}</h3>
+            <p>{{ selectedProfile.age }}y · {{ selectedProfile.gender }} · {{ selectedProfile.occupation }}</p>
+          </div>
+        </div>
+        <div class="profile-modal-body">
+          <div v-if="selectedProfile.personality" class="profile-field">
+            <label>Personality</label><p>{{ selectedProfile.personality }}</p>
+          </div>
+          <div v-if="selectedProfile.interests" class="profile-field">
+            <label>Interests</label>
+            <div class="tag-list"><span v-for="ii in selectedProfile.interests" :key="ii" class="tag">{{ ii }}</span></div>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
   <div v-else class="loading">{{ $t('common.loading') }}</div>
@@ -247,11 +252,16 @@ const selectedNode = ref<{
 } | null>(null)
 
 const interviewAgentName = ref('')
+const interviewAgent = interviewAgentName
+const chatMode = ref<'interview' | 'report'>('interview')
+const chatInput = ref('')
+const chatLoading = ref(false)
+const chatHistory = ref<{ role: 'user' | 'agent'; sender: string; content: string }[]>([])
+
+// Legacy compat
 const interviewQuestion = ref('')
 const interviewResponse = ref('')
 const interviewing = ref(false)
-// Alias for template
-const interviewAgent = interviewAgentName
 
 let pollTimer: ReturnType<typeof setInterval> | null = null
 
@@ -355,6 +365,43 @@ async function doInterview() {
   }
 }
 
+async function sendChat() {
+  if (!chatInput.value || chatLoading.value) return
+  const question = chatInput.value
+  chatInput.value = ''
+  chatHistory.value.push({ role: 'user', sender: 'You', content: question })
+  chatLoading.value = true
+
+  try {
+    if (chatMode.value === 'interview' && interviewAgentName.value) {
+      const { data } = await apiInterview(route.params.id as string, interviewAgentName.value, question)
+      chatHistory.value.push({ role: 'agent', sender: `@${interviewAgentName.value}`, content: data.response })
+    } else {
+      // Report chat: interview the "ReportAgent" about the report
+      const { data } = await apiInterview(route.params.id as string, agentNames.value[0] || 'ReportAgent', question)
+      chatHistory.value.push({ role: 'agent', sender: 'Report Agent', content: data.response })
+    }
+  } catch (e: any) {
+    chatHistory.value.push({ role: 'agent', sender: 'System', content: `Error: ${e.message}` })
+  } finally {
+    chatLoading.value = false
+  }
+}
+
+const timelineEvents = computed(() => {
+  const s = campaign.value?.status || 'created'
+  const idx = STATUS_ORDER.indexOf(s)
+  const events = [
+    { label: 'Campaign Created', detail: '', done: idx >= 0, active: idx === 0 },
+    { label: 'Building Knowledge Graph', detail: graphData.value ? `${graphData.value.stats.nodes} entities` : '', done: idx >= 2, active: idx === 1 },
+    { label: 'Generating Personas', detail: agentProfiles.value.length ? `${agentProfiles.value.length} agents` : '', done: idx >= 3, active: idx === 3 },
+    { label: 'Running Simulation', detail: simStatus.value ? `R${simStatus.value.current_round}/${simStatus.value.total_rounds}` : '', done: idx >= 5, active: idx === 4 },
+    { label: 'Generating Report', detail: '', done: idx >= 6, active: idx === 5 },
+    { label: 'Complete', detail: campaign.value?.viral_score ? `Viral: ${campaign.value.viral_score}/100` : '', done: idx >= 6, active: false },
+  ]
+  return events
+})
+
 // Entity type → color mapping (MiroFish style)
 const TYPE_COLORS: Record<string, string> = {
   person: '#f87171',     // red
@@ -383,7 +430,7 @@ function renderGraph() {
   container.innerHTML = ''
 
   const width = container.clientWidth
-  const height = 600
+  const height = container.clientHeight || 400
 
   const svg = d3.select(container)
     .append('svg')
@@ -526,104 +573,107 @@ onUnmounted(() => { if (pollTimer) clearInterval(pollTimer) })
 </script>
 
 <style scoped>
-.campaign { display: flex; flex-direction: column; gap: 24px; padding-bottom: 64px; }
+.campaign { display: flex; flex-direction: column; gap: 16px; padding-bottom: 64px; }
+
+/* Top bar */
+.top-bar { display: flex; align-items: center; gap: 16px; }
+.top-bar h1 { flex: 1; font-size: 20px; margin: 0; }
 .back-link { color: var(--text-secondary); text-decoration: none; font-size: 14px; }
 .back-link:hover { color: var(--accent); }
-.campaign-header { display: flex; justify-content: space-between; align-items: center; }
-.campaign-header h1 { font-size: 24px; }
 
 /* Pipeline Steps */
 .pipeline-steps { display: flex; gap: 4px; }
-.step { display: flex; align-items: center; gap: 8px; padding: 8px 16px; background: var(--bg-card); border-radius: 8px; color: var(--text-secondary); font-size: 13px; }
+.step { display: flex; align-items: center; gap: 6px; padding: 6px 14px; background: var(--bg-card); border-radius: 8px; color: var(--text-secondary); font-size: 12px; }
 .step.active { background: var(--accent); color: white; }
 .step.done { background: rgba(74, 222, 128, 0.15); color: var(--positive); }
-.step-num { font-weight: 700; font-size: 14px; }
+.step-num { font-weight: 700; }
 
-.step-card h3 { margin-bottom: 12px; }
-.step-card p { color: var(--text-secondary); line-height: 1.5; }
+/* WORKBENCH: Left-Right Split */
+.workbench { display: grid; grid-template-columns: 1fr 380px; gap: 16px; align-items: start; }
+.workbench-left { display: flex; flex-direction: column; gap: 16px; }
+.workbench-right { display: flex; flex-direction: column; gap: 16px; position: sticky; top: 16px; max-height: calc(100vh - 120px); overflow-y: auto; }
 
-/* Graph */
-.graph-section { margin-bottom: 8px; }
-.graph-section h3 { margin-bottom: 12px; }
-.graph-layout { display: grid; grid-template-columns: 1fr 300px; gap: 16px; }
-.graph-main { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
-.graph-container { width: 100%; height: 600px; background: var(--bg-secondary); }
+.step-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; }
+.step-card h3 { margin-bottom: 10px; font-size: 15px; }
+.step-card p { color: var(--text-secondary); line-height: 1.5; font-size: 13px; }
 
-.graph-sidebar { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; }
-.graph-sidebar-empty { display: flex; align-items: center; justify-content: center; }
-.graph-sidebar-empty p { color: var(--text-secondary); font-size: 14px; }
+/* Right panels */
+.right-panel { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; }
+.right-panel h3 { font-size: 14px; margin-bottom: 10px; }
+.hint-text { color: var(--text-secondary); font-size: 12px; }
 
-.node-detail-card { display: flex; flex-direction: column; gap: 16px; }
-.node-detail-header { display: flex; flex-direction: column; gap: 8px; }
-.node-detail-header h4 { font-size: 18px; margin: 0; }
-.node-type-badge {
-  display: inline-block; width: fit-content; padding: 3px 10px;
-  border-radius: 12px; font-size: 11px; font-weight: 600;
-  color: white; text-transform: uppercase;
-}
-.node-description { color: var(--text-secondary); font-size: 13px; line-height: 1.5; }
-.node-connections h5 { font-size: 13px; color: var(--text-secondary); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px; }
-.connection-item {
-  display: flex; gap: 8px; padding: 6px 0;
-  border-bottom: 1px solid var(--border); font-size: 13px;
-}
+/* Graph (compact for right panel) */
+.graph-container-sm { width: 100%; height: 350px; background: var(--bg-secondary); border-radius: 8px; overflow: hidden; margin-bottom: 12px; }
+
+.node-detail-card { display: flex; flex-direction: column; gap: 10px; }
+.node-detail-header { display: flex; flex-direction: column; gap: 4px; }
+.node-detail-header h4 { font-size: 15px; margin: 0; }
+.node-type-badge { display: inline-block; width: fit-content; padding: 2px 8px; border-radius: 10px; font-size: 10px; font-weight: 600; color: white; text-transform: uppercase; }
+.node-description { color: var(--text-secondary); font-size: 12px; line-height: 1.4; }
+.node-connections { display: flex; flex-direction: column; gap: 4px; }
+.connection-item { display: flex; gap: 6px; font-size: 12px; padding: 3px 0; border-bottom: 1px solid var(--border); }
 .conn-label { color: var(--accent); font-weight: 600; }
 .conn-target { color: var(--text-secondary); }
 
+/* Chat tabs */
+.chat-tabs { display: flex; gap: 2px; margin-bottom: 10px; background: var(--bg-secondary); border-radius: 6px; padding: 2px; }
+.chat-tabs button { flex: 1; padding: 6px; background: transparent; color: var(--text-secondary); border-radius: 4px; font-size: 12px; }
+.chat-tabs button.active { background: var(--accent); color: white; }
+
+/* Chat */
+.chat-history { max-height: 300px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; margin-bottom: 10px; }
+.chat-msg { padding: 8px 12px; border-radius: 8px; font-size: 13px; }
+.chat-msg.user { background: var(--accent); color: white; align-self: flex-end; max-width: 85%; }
+.chat-msg.agent { background: var(--bg-secondary); align-self: flex-start; max-width: 85%; }
+.chat-sender { font-size: 11px; font-weight: 600; margin-bottom: 2px; opacity: 0.7; }
+.chat-msg p { margin: 0; line-height: 1.4; }
+.chat-input-row { display: flex; gap: 4px; }
+.chat-input-row input { flex: 1; font-size: 12px; padding: 8px 10px; }
+.btn-sm { padding: 8px 12px; font-size: 12px; }
+
+/* Timeline */
+.timeline { display: flex; flex-direction: column; gap: 0; }
+.timeline-item { display: flex; gap: 12px; padding: 8px 0; position: relative; }
+.timeline-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--border); margin-top: 4px; flex-shrink: 0; }
+.timeline-item.done .timeline-dot { background: var(--positive); }
+.timeline-item.active .timeline-dot { background: var(--accent); box-shadow: 0 0 8px var(--accent); }
+.timeline-content { flex: 1; }
+.timeline-content strong { font-size: 12px; display: block; }
+.timeline-detail { font-size: 11px; color: var(--text-secondary); }
+.timeline-item:not(:last-child)::before {
+  content: ''; position: absolute; left: 4px; top: 22px; bottom: -8px;
+  width: 2px; background: var(--border);
+}
+.timeline-item.done:not(:last-child)::before { background: var(--positive); }
+
 /* Action Feed */
-.action-feed { max-height: 400px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; }
-.action-item { padding: 10px 14px; background: var(--bg-secondary); border-radius: 8px; border-left: 3px solid var(--border); }
+.action-feed { max-height: 350px; overflow-y: auto; display: flex; flex-direction: column; gap: 6px; }
+.action-item { padding: 8px 12px; background: var(--bg-secondary); border-radius: 6px; border-left: 3px solid var(--border); }
 .action-item.action-post { border-left-color: var(--accent); }
 .action-item.action-reply { border-left-color: var(--mixed); }
 .action-item.action-share { border-left-color: var(--positive); }
 .action-item.action-like { border-left-color: var(--positive); }
 .action-item.action-dislike { border-left-color: var(--negative); }
-.action-header { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; font-size: 13px; }
+.action-header { display: flex; align-items: center; gap: 6px; margin-bottom: 3px; font-size: 12px; }
 .action-type { color: var(--text-secondary); }
-.action-content { color: var(--text-secondary); font-style: italic; line-height: 1.4; font-size: 13px; }
-.action-target { color: var(--text-secondary); font-size: 12px; }
+.action-content { color: var(--text-secondary); font-style: italic; line-height: 1.4; font-size: 12px; }
+.action-target { color: var(--text-secondary); font-size: 11px; }
 
 /* Score Grid */
-.score-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+.score-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
 .score-card { text-align: center; }
 .score-card.accent .score-value { color: var(--accent); }
-.score-label { font-size: 12px; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; }
-.score-value { font-size: 32px; font-weight: 700; }
-.score-value span { font-size: 16px; color: var(--text-secondary); font-weight: 400; }
+.score-label { font-size: 11px; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
+.score-value { font-size: 28px; font-weight: 700; }
+.score-value span { font-size: 14px; color: var(--text-secondary); font-weight: 400; }
 
-.report-section { display: flex; flex-direction: column; gap: 16px; }
-.report-layout { display: grid; grid-template-columns: 1fr 340px; gap: 16px; }
-.report-main { display: flex; flex-direction: column; gap: 16px; }
-.report-card {
-  background: var(--bg-card); border: 1px solid var(--border);
-  border-radius: var(--radius); padding: 24px;
-}
-.report-card h3 { margin-bottom: 12px; font-size: 16px; }
-.summary-text { color: var(--text-secondary); line-height: 1.7; font-size: 15px; }
-.section-content { color: var(--text-secondary); line-height: 1.7; white-space: pre-wrap; font-size: 14px; }
-.rec-list { padding-left: 20px; }
-.rec-list li { color: var(--text-secondary); margin-bottom: 10px; line-height: 1.6; }
-
-/* Interview sidebar */
-.interview-sidebar {
-  position: sticky; top: 24px; align-self: start;
-}
-.interview-panel {
-  background: var(--bg-card); border: 1px solid var(--border);
-  border-radius: var(--radius); padding: 20px;
-  display: flex; flex-direction: column; gap: 12px;
-}
-.interview-panel h3 { font-size: 15px; margin: 0; }
-.interview-panel select { width: 100%; }
-.interview-input-row { display: flex; gap: 6px; }
-.interview-input-row input { flex: 1; font-size: 13px; padding: 8px 12px; }
-.btn-sm { padding: 8px 14px; font-size: 13px; }
-.interview-response {
-  background: var(--bg-secondary); border-radius: 8px; padding: 14px;
-}
-.interview-agent-name { font-weight: 700; font-size: 13px; color: var(--accent); margin-bottom: 6px; }
-.interview-response p { color: var(--text-secondary); line-height: 1.5; font-size: 13px; margin: 0; }
-.interview-hint p { color: var(--text-secondary); font-size: 12px; line-height: 1.4; }
+/* Report cards */
+.report-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; }
+.report-card h3 { margin-bottom: 10px; font-size: 15px; }
+.summary-text { color: var(--text-secondary); line-height: 1.6; font-size: 14px; }
+.section-content { color: var(--text-secondary); line-height: 1.6; white-space: pre-wrap; font-size: 13px; }
+.rec-list { padding-left: 18px; }
+.rec-list li { color: var(--text-secondary); margin-bottom: 8px; line-height: 1.5; font-size: 13px; }
 
 /* Agent Profiles */
 .profiles-grid {
