@@ -12,7 +12,9 @@
 
 Hey r/marketing,
 
-I got tired of guessing whether my content would land. So I built **PhantomCrowd** — an open-source AI audience simulator.
+I'm an AI R&D engineer — not a marketer. I saw [MiroFish](https://github.com/666ghj/MiroFish) (48K stars), a multi-agent simulation engine that predicts anything, and thought: what if this concept was focused specifically on marketing? Instead of predicting elections or stock markets, what if you could preview how real people would react to your ad copy before spending a dollar?
+
+I'm not a marketing expert, so I'd really appreciate feedback from people who actually do this for a living. Here's what I built: **PhantomCrowd** — an open-source AI audience simulator.
 
 **How it works:**
 1. Paste your content (ad copy, social post, product launch, whatever)
@@ -43,7 +45,7 @@ Would love feedback from actual marketers — does this solve a real pain point 
 
 **Body:**
 
-Built an open-source multi-agent simulation platform for content marketing.
+I'm an AI R&D engineer. Got inspired by [MiroFish](https://github.com/666ghj/MiroFish) (48K stars) — a multi-agent prediction engine — and built a marketing-focused version.
 
 **Architecture:**
 - **Knowledge Graph** (LightRAG + NetworkX) — auto-extracts entities and relationships from content + context
@@ -65,9 +67,11 @@ GitHub: https://github.com/l2dnjsrud/PhantomCrowd
 
 **Body:**
 
+I'm an AI engineer, not a marketer. I saw [MiroFish](https://github.com/666ghj/MiroFish) — a multi-agent simulation engine that hit 48K GitHub stars — and thought: this concept would be perfect for content marketing.
+
 **The problem:** You spend hours crafting content, post it, and... crickets. Or worse, backlash you didn't see coming.
 
-**The solution:** PhantomCrowd summons a crowd of AI personas that react to your content like real people would.
+**The solution:** I built **PhantomCrowd** — it summons a crowd of AI personas that react to your content like real people would.
 
 **Features:**
 - 🎯 Quick Test — paste content, get 50 persona reactions in minutes
@@ -89,7 +93,9 @@ https://github.com/l2dnjsrud/PhantomCrowd
 
 **Body:**
 
-I built **PhantomCrowd**, an open-source tool that uses Claude to simulate how real audiences will react to your content.
+I'm an AI R&D engineer. Got inspired by [MiroFish](https://github.com/666ghj/MiroFish) (48K stars multi-agent prediction engine) and built a marketing-focused version called **PhantomCrowd**. I'm not a marketing expert — I just thought multi-agent simulation could solve a real problem in content creation.
+
+It's an open-source tool that simulates how real audiences will react to your content.
 
 **Works with any OpenAI-compatible API, including Claude:**
 - Use **Haiku** for persona reactions (fast, cheap — handles 500 personas)
@@ -117,7 +123,7 @@ GitHub: https://github.com/l2dnjsrud/PhantomCrowd
 
 **Body:**
 
-Built an open-source tool that simulates how audiences react to content before you publish it. Runs entirely on your machine with Ollama.
+I'm an AI engineer, not a marketing person. I saw [MiroFish](https://github.com/666ghj/MiroFish) (48K stars) do multi-agent simulation for general prediction, but it requires Zep Cloud and paid APIs. So I built a marketing-focused version that runs 100% locally.
 
 **Local setup (3 commands):**
 ```
@@ -154,7 +160,7 @@ https://github.com/l2dnjsrud/PhantomCrowd
 
 **Body:**
 
-I wanted to test marketing content without paying for API calls, so I built **PhantomCrowd** to run entirely on Ollama.
+I'm an AI R&D engineer. Got inspired by [MiroFish](https://github.com/666ghj/MiroFish) but wanted something that runs fully local without Zep Cloud or paid APIs. So I built **PhantomCrowd** — a marketing-focused multi-agent simulator that runs entirely on Ollama.
 
 **Recommended models:**
 - `qwen2.5:7b` — best balance of speed and quality for persona reactions
@@ -189,7 +195,7 @@ https://github.com/l2dnjsrud/PhantomCrowd
 
 **Body:**
 
-Built an open-source multi-agent simulation platform specifically for content marketing prediction.
+I'm an AI R&D engineer. Inspired by [MiroFish](https://github.com/666ghj/MiroFish) (48K stars, general-purpose multi-agent prediction), I built a marketing-specific version with a different agent architecture and no external service dependencies.
 
 **Agent Architecture:**
 
@@ -344,7 +350,7 @@ github.com/l2dnjsrud/PhantomCrowd
 
 **Body:**
 
-오픈소스 AI 오디언스 시뮬레이터입니다.
+AI R&D 엔지니어입니다. MiroFish(GitHub 48K 스타)를 보고 영감을 받아 마케팅 특화 버전을 만들었습니다. 마케팅 전문가는 아니지만, 멀티에이전트 시뮬레이션이 콘텐츠 마케팅에 잘 맞겠다 싶어서 만들어봤습니다.
 
 광고 카피, SNS 포스트, 제품 런칭 문구를 넣으면 AI 페르소나 수백 명이 각자 독립적으로 반응합니다.
 
@@ -369,7 +375,9 @@ GitHub: https://github.com/l2dnjsrud/PhantomCrowd
 
 **Body:**
 
-안녕하세요, AI 엔지니어입니다.
+안녕하세요, AI R&D 엔지니어입니다. 마케팅 전문가는 아닙니다.
+
+GitHub에서 MiroFish(48K 스타)라는 멀티에이전트 시뮬레이션 프로젝트를 보고, "이걸 마케팅에 쓰면 어떨까?" 싶어서 만들어봤습니다.
 
 마케팅할 때 "이 문구가 먹힐까?" 항상 고민되잖아요.
 그래서 AI 페르소나 수백 명이 미리 반응해주는 시뮬레이터를 만들었습니다.
