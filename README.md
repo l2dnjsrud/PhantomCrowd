@@ -66,7 +66,12 @@ PhantomCrowd is a **multi-agent AI simulation platform** for marketing teams. It
 
 <p align="center">
   <img src="docs/screenshots/06-campaign-report.png" width="80%" alt="Marketing Report">
-  <br><em>AI-generated marketing report with viral score, segment analysis, and recommendations</em>
+  <br><em>Viral Score (calibrated 0-100), agent count, report with segment analysis</em>
+</p>
+
+<p align="center">
+  <img src="docs/screenshots/05-campaign-report-actions.png" width="80%" alt="Report + Recommendations + Interview">
+  <br><em>Full report, actionable recommendations, and post-sim agent interview panel</em>
 </p>
 
 ### Quick Test + A/B Test (v1)
