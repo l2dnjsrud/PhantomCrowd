@@ -74,7 +74,7 @@ GitHub: https://github.com/l2dnjsrud/PhantomCrowd
 - 🔬 A/B Test — compare two variants head-to-head
 - 🌐 Campaign Mode — full multi-agent simulation with knowledge graph
 - 📊 Dashboard — sentiment distribution, viral score, engagement metrics
-- 🗣️ 12 languages supported
+- 🗣️ Simulate in 12 languages (Korean, Japanese, Chinese, Spanish, etc.)
 - 🔒 Runs fully local with Ollama
 
 Tech: Python + FastAPI + Vue 3 + LightRAG + camel-ai
@@ -91,10 +91,10 @@ https://github.com/l2dnjsrud/PhantomCrowd
 
 I built **PhantomCrowd**, an open-source tool that uses Claude to simulate how real audiences will react to your content.
 
-**How Claude is used:**
-- **Haiku** generates persona reactions (fast, cheap — handles 500 personas)
-- **Sonnet** does the heavy lifting: persona generation, knowledge graph analysis, marketing reports
-- Works with any OpenAI-compatible API, so you can also use Ollama locally for free
+**Works with any OpenAI-compatible API, including Claude:**
+- Use **Haiku** for persona reactions (fast, cheap — handles 500 personas)
+- Use **Sonnet** for persona generation, knowledge graph analysis, marketing reports
+- Also works with Ollama (free, local), OpenAI, Groq, Together AI — just change the base URL and model name in `.env`
 
 **What it actually does:**
 1. You paste content (ad copy, social post, product launch)
@@ -105,7 +105,7 @@ I built **PhantomCrowd**, an open-source tool that uses Claude to simulate how r
 
 The results are surprisingly realistic. A 19-year-old K-pop fan reacts very differently from a 45-year-old marketing executive — and when they interact, you get emergent behavior you can't predict from individual responses.
 
-MIT licensed, Docker support, 12 languages.
+MIT licensed, Docker support, simulate in 12 languages.
 
 GitHub: https://github.com/l2dnjsrud/PhantomCrowd
 
@@ -139,11 +139,6 @@ That's it. No API keys, no cloud services, no Zep Cloud (looking at you, MiroFis
 - `qwen2.5:7b` for persona reactions (fast enough for 500 personas)
 - `nomic-embed-text` for knowledge graph embeddings
 - Any OpenAI-compatible model works — swap in `llama3.1`, `mistral`, `exaone3.5`, whatever you prefer
-
-**Performance on my 3090:**
-- 50 personas: ~3 minutes
-- 200 personas: ~12 minutes
-- Campaign (20 LLM agents, 5 rounds): ~8 minutes
 
 Stack: Python/FastAPI, Vue 3, LightRAG, camel-ai, D3.js, ECharts.
 

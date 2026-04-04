@@ -47,7 +47,7 @@ PhantomCrowd is a **multi-agent AI simulation platform** for marketing teams. It
 - **Single Simulation** -- fast persona reactions (10-500 personas)
 - **A/B Testing** -- compare two content variants head-to-head
 - **Custom Target Audience** -- age, gender, occupation, interests filtering
-- **Multi-Language** -- 12 languages (Korean, Japanese, Chinese, Spanish, French, etc.)
+- **Multi-Language** -- simulate audience reactions in 12 languages (Korean, Japanese, Chinese, Spanish, French, etc.)
 - **Export** -- CSV / JSON download
 - **History Comparison** -- compare past simulations side-by-side
 
@@ -273,7 +273,7 @@ Environment variables (prefix `PC_`):
 - [x] ReportAgent with marketing analysis
 - [x] Agent interview system
 - [x] A/B testing
-- [x] Multi-language support (12 languages)
+- [x] Multi-language simulation (12 languages via LLM instruction)
 - [x] Export (CSV/JSON)
 - [x] D3.js knowledge graph visualization
 - [ ] WebSocket real-time streaming
