@@ -25,7 +25,7 @@
 
 PhantomCrowd is a **multi-agent AI simulation platform** for marketing teams. It builds a knowledge graph from your content and context, spawns hundreds of AI personas that interact with each other on a simulated social network, and produces an actionable marketing report with viral predictions.
 
-> Type your K-POP comeback teaser + fan community context. PhantomCrowd builds a knowledge graph, spawns 20 LLM-powered agents + 100 rule-based agents that argue, share, and react on simulated Twitter. Watch the content spread (or die). Get a report: "Viral Score 82/100. 18-24 segment drove 70% of shares. Recommendation: add a dance challenge hook."
+> Type your K-POP comeback teaser + fan community context. PhantomCrowd builds a knowledge graph, spawns up to 100 LLM-powered agents + 2,000 rule-based agents that argue, share, and react on simulated Twitter. Watch the content spread (or die). Get a report: "Viral Score 82/100. 18-24 segment drove 70% of shares. Recommendation: add a dance challenge hook."
 
 **Not a survey. A simulation.**
 
@@ -35,7 +35,7 @@ PhantomCrowd is a **multi-agent AI simulation platform** for marketing teams. It
 
 - **Knowledge Graph** (LightRAG) -- auto-extract entities and relationships from your content + context
 - **Multi-Agent Interaction** (camel-ai) -- LLM agents post, reply, share, like, argue with each other
-- **Tiered Agent Model** -- 20 full-LLM agents + hundreds of rule-based agents for realistic crowd dynamics
+- **Tiered Agent Model** -- up to 100 full-LLM agents + up to 2,000 rule-based agents for realistic crowd dynamics
 - **5-Stage Pipeline** -- Graph Build -> Persona Generation -> Simulation -> Report -> Interview
 - **ReportAgent** -- auto-generated marketing report with viral score, segment analysis, key insights, recommendations
 - **Agent Interview** -- ask specific agents "why did you share this?" post-simulation
@@ -44,7 +44,7 @@ PhantomCrowd is a **multi-agent AI simulation platform** for marketing teams. It
 
 ### v1: Quick Test Mode
 
-- **Single Simulation** -- fast persona reactions (10-200 personas)
+- **Single Simulation** -- fast persona reactions (10-500 personas)
 - **A/B Testing** -- compare two content variants head-to-head
 - **Custom Target Audience** -- age, gender, occupation, interests filtering
 - **Multi-Language** -- 12 languages (Korean, Japanese, Chinese, Spanish, French, etc.)
@@ -106,8 +106,8 @@ PhantomCrowd v2
   +-----------------------------------------------------------------+
   |          Layer 3: Multi-Agent Simulation (camel-ai)              |
   |                                                                  |
-  |   20 LLM Agents (full personality, graph-grounded context)       |
-  |   + 100 Rule-Based Agents (probability-driven behavior)          |
+  |   Up to 100 LLM Agents (full personality, graph-grounded context) |
+  |   + Up to 2,000 Rule-Based Agents (probability-driven behavior)  |
   |                                                                  |
   |   Round 1: @Yuna_fan posts "OMG ECLIPSE!!" -> 3 replies, 5 likes|
   |   Round 2: @Music_critic posts "Bold move..." -> debate starts   |

@@ -18,7 +18,7 @@
           <input v-model="campaignForm.title" :placeholder="$t('campaign.form.titlePlaceholder')" required />
         </div>
 
-        <div class="form-row form-row-3">
+        <div class="form-row form-row-4">
           <div class="form-group">
             <label>{{ $t('campaign.form.contentType') }}</label>
             <select v-model="campaignForm.content_type">
@@ -36,6 +36,16 @@
               <option :value="20">20 ({{ $t('common.deep') }})</option>
               <option :value="50">50</option>
               <option :value="100">100 (Max)</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>{{ locale === 'ko' ? '규칙 기반 에이전트' : 'Rule Agents' }}</label>
+            <select v-model.number="campaignForm.rule_agents">
+              <option :value="50">50 ({{ $t('common.quick') }})</option>
+              <option :value="100">100 ({{ $t('common.default') }})</option>
+              <option :value="500">500</option>
+              <option :value="1000">1,000 ({{ $t('common.deep') }})</option>
+              <option :value="2000">2,000 (Max)</option>
             </select>
           </div>
           <div class="form-group">
@@ -110,6 +120,7 @@
               <option :value="50">50 (Default)</option>
               <option :value="100">100</option>
               <option :value="200">200 (Deep)</option>
+              <option :value="500">500 (Max)</option>
             </select>
           </div>
           <div class="form-group">
@@ -193,6 +204,8 @@
               <option :value="30">30</option>
               <option :value="50">50 (Default)</option>
               <option :value="100">100</option>
+              <option :value="200">200 (Deep)</option>
+              <option :value="500">500 (Max)</option>
             </select>
           </div>
           <div class="form-group">
@@ -327,6 +340,7 @@ const campaignForm = reactive({
   context_text: '',
   language: 'en',
   llm_agents: 10,
+  rule_agents: 100,
 })
 
 const form = reactive({
@@ -476,6 +490,7 @@ function formatDate(dateStr: string) {
 }
 .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
 .form-row-3 { grid-template-columns: 1fr 1fr 1fr; }
+.form-row-4 { grid-template-columns: 1fr 1fr 1fr 1fr; }
 
 .toggle-btn {
   font-size: 11px; padding: 2px 8px; background: var(--bg-secondary);
