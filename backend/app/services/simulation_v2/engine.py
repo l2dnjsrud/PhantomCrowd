@@ -215,6 +215,60 @@ def _rule_agent_act(
     )
 
 
+def _build_crowd_pulse(rule_actions: list[Action], all_actions: list[Action], round_num: int) -> str:
+    """Build a crowd pulse summary from rule-based agent actions for LLM agent context."""
+    if not rule_actions and round_num <= 1:
+        return ""
+
+    # Count actions from this round's rule agents
+    likes = sum(1 for a in rule_actions if a.action_type == "like")
+    shares = sum(1 for a in rule_actions if a.action_type == "share")
+    dislikes = sum(1 for a in rule_actions if a.action_type == "dislike")
+    replies = sum(1 for a in rule_actions if a.action_type == "reply")
+    ignores_est = max(0, len(rule_actions) * 2 - len(rule_actions))  # Estimate ignored
+
+    total_engaging = likes + shares + dislikes + replies
+    total_possible = total_engaging + ignores_est
+    engagement_rate = round(total_engaging / max(total_possible, 1) * 100)
+
+    # Sentiment from rule agents
+    scores = [a.sentiment_score for a in rule_actions if a.sentiment_score != 0]
+    avg_sentiment = round(sum(scores) / max(len(scores), 1), 2)
+    sentiment_label = "positive" if avg_sentiment > 0.3 else "negative" if avg_sentiment < -0.3 else "mixed"
+
+    # Find most shared/replied-to agent
+    target_counts: dict[str, int] = {}
+    for a in rule_actions:
+        if a.target_agent and a.action_type in ("share", "reply", "like"):
+            target_counts[a.target_agent] = target_counts.get(a.target_agent, 0) + 1
+    top_target = max(target_counts, key=target_counts.get) if target_counts else "none"
+    top_count = target_counts.get(top_target, 0)
+
+    # Sentiment trend across rounds
+    prev_round_actions = [a for a in all_actions if a.action_type != "ignore" and a.round_num == round_num - 1]
+    if prev_round_actions:
+        prev_scores = [a.sentiment_score for a in prev_round_actions if a.sentiment_score != 0]
+        prev_avg = sum(prev_scores) / max(len(prev_scores), 1)
+        trend_diff = avg_sentiment - prev_avg
+        if trend_diff > 0.15:
+            trend = "rising (more positive than last round)"
+        elif trend_diff < -0.15:
+            trend = "falling (more negative than last round)"
+        else:
+            trend = "stable"
+    else:
+        trend = "first round"
+
+    return f"""
+CROWD PULSE (what {total_engaging} audience members did this round):
+- 👍 {likes} liked | 🔄 {shares} shared | 💬 {replies} replied | 👎 {dislikes} disliked
+- Engagement rate: {engagement_rate}%
+- Crowd sentiment: {sentiment_label} (avg: {avg_sentiment})
+- Sentiment trend: {trend}
+- Most popular post: @{top_target} ({top_count} interactions)
+NOTE: Use this crowd momentum to inform your reaction. If the crowd is excited, you might join in or push back. If they're hostile, you might stay quiet or defend."""
+
+
 async def run_simulation(
     campaign_id: str,
     content: str,
@@ -245,17 +299,25 @@ async def run_simulation(
         memories[profile.name] = AgentMemory()
 
     all_actions: list[Action] = []
+    prev_rule_actions: list[Action] = []  # Rule actions from previous round
 
     try:
         for round_num in range(1, num_rounds + 1):
             simulation_states[campaign_id]["current_round"] = round_num
             round_actions: list[Action] = []
 
+            # Build crowd pulse from previous round's rule-based actions
+            crowd_pulse = _build_crowd_pulse(prev_rule_actions, all_actions, round_num)
+
             # LLM agents act (sequentially to avoid overwhelming Ollama)
             for profile in llm_profiles:
-                # Rebuild agent with updated memory each round
+                # Rebuild agent with updated memory + crowd pulse each round
+                agent_graph_context = graph_context
+                if crowd_pulse:
+                    agent_graph_context = graph_context + "\n" + crowd_pulse
+
                 agents[profile.name] = _create_agent(
-                    profile, content, graph_context, memories[profile.name]
+                    profile, content, agent_graph_context, memories[profile.name]
                 )
                 agent = agents[profile.name]
                 action = await asyncio.to_thread(
@@ -275,6 +337,7 @@ async def run_simulation(
                 simulation_states[campaign_id]["actions_count"] += 1
 
             # Rule-based agents act (instant, no LLM)
+            current_rule_actions: list[Action] = []
             for profile in rule_profiles:
                 action = _rule_agent_act(profile, round_num, all_actions)
                 if action.action_type != "ignore":
@@ -285,7 +348,11 @@ async def run_simulation(
                         action.target_agent, action.sentiment, action.sentiment_score,
                     )
                     round_actions.append(action)
+                    current_rule_actions.append(action)
                     simulation_states[campaign_id]["actions_count"] += 1
+
+            # Save this round's rule actions for next round's crowd pulse
+            prev_rule_actions = current_rule_actions
 
             # Update all agents' "seen posts" memory from this round
             for action in round_actions:
