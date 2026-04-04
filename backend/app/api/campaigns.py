@@ -199,6 +199,7 @@ async def _run_campaign_pipeline(campaign_id: str):
                 content=campaign.content,
                 actions=actions,
                 graph_context=graph_context,
+                language=campaign.language,
             )
 
             campaign.viral_score = report.get("viral_score")

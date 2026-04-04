@@ -139,15 +139,28 @@ def _compute_stats(actions: list[Action]) -> dict:
     }
 
 
+LANGUAGE_INSTRUCTION_MAP = {
+    "ko": "\n\nIMPORTANT: Write ALL output in Korean (한국어). Section titles, analysis, recommendations, summary — everything must be in Korean.",
+    "ja": "\n\nIMPORTANT: Write ALL output in Japanese (日本語).",
+    "zh": "\n\nIMPORTANT: Write ALL output in Chinese (中文).",
+    "es": "\n\nIMPORTANT: Write ALL output in Spanish (Español).",
+    "fr": "\n\nIMPORTANT: Write ALL output in French (Français).",
+    "de": "\n\nIMPORTANT: Write ALL output in German (Deutsch).",
+}
+
+
 async def generate_report(
     content: str,
     actions: list[Action],
     graph_context: str = "",
+    language: str = "en",
 ) -> dict:
     """Generate a marketing report using ReACT pattern."""
 
     if not actions:
         return {"viral_score": 0, "summary": "No simulation data", "sections": [], "recommendations": []}
+
+    lang_instruction = LANGUAGE_INSTRUCTION_MAP.get(language, "")
 
     stats = _compute_stats(actions)
 
@@ -162,7 +175,7 @@ async def generate_report(
         avg_score=stats["avg_score"],
     )
 
-    plan_text = await _llm_call(plan_prompt, 1024)
+    plan_text = await _llm_call(plan_prompt + lang_instruction, 1024)
     try:
         sections_plan = extract_json(plan_text)
         if isinstance(sections_plan, dict):
@@ -216,13 +229,13 @@ async def generate_report(
         # --- Search synthesis ---
         search_result = await _llm_call(SEARCH_PROMPT.format(
             title=title, question=question, tool_results=tool_text,
-        ), 512)
+        ) + lang_instruction, 512)
 
         # --- Write phase ---
         section_content = await _llm_call(WRITE_PROMPT.format(
             title=title, question=question, findings=search_result,
             graph_context=graph_context[:500], sample_reactions=sample_reactions[:500],
-        ), 1024)
+        ) + lang_instruction, 1024)
 
         # --- Reflect phase ---
         try:
@@ -257,7 +270,7 @@ async def generate_report(
         engagement_rate=(total_engage - ignore_count) / total_engage,
         sections_text=sections_text,
         influencer_data=influencer_result.result,
-    ), 1024)
+    ) + lang_instruction, 1024)
 
     try:
         synthesis = extract_json(synthesis_text)
