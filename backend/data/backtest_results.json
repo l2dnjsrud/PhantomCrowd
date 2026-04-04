@@ -1,0 +1,1095 @@
+{
+  "meta": {
+    "model": "exaone3.5:7.8b",
+    "cd_model": "qwen3.5:27b",
+    "agents_per_campaign": 5,
+    "total_campaigns": 50,
+    "successful_runs": 50,
+    "total_time_seconds": 431.9,
+    "timestamp": "2026-04-04 09:38:09"
+  },
+  "metrics": {
+    "pearson_correlation": 0.4694,
+    "mean_absolute_error": 21.6,
+    "directional_accuracy": 71.0,
+    "exact_bucket_match": "15/50",
+    "near_bucket_match": "30/50"
+  },
+  "results": [
+    {
+      "index": 0,
+      "name": "Nike - Just Do It",
+      "expected_score": 92,
+      "raw_score": 78,
+      "cd_penalty": 0,
+      "final_score": 78,
+      "avg_sentiment": 0.72,
+      "sentiment_dist": {
+        "positive": 5
+      },
+      "engagement_dist": {
+        "share": 2,
+        "like": 3
+      },
+      "controversy_detected": false,
+      "controversy_risk": "skipped",
+      "outcome": "success",
+      "time_seconds": 41.6,
+      "error": null
+    },
+    {
+      "index": 1,
+      "name": "Apple - Think Different",
+      "expected_score": 90,
+      "raw_score": 65,
+      "cd_penalty": 0,
+      "final_score": 65,
+      "avg_sentiment": 0.76,
+      "sentiment_dist": {
+        "positive": 5
+      },
+      "engagement_dist": {
+        "like": 3,
+        "share": 2
+      },
+      "controversy_detected": false,
+      "controversy_risk": "skipped",
+      "outcome": "success",
+      "time_seconds": 42.7,
+      "error": null
+    },
+    {
+      "index": 2,
+      "name": "Dove - Real Beauty",
+      "expected_score": 80,
+      "raw_score": 73,
+      "cd_penalty": 0,
+      "final_score": 73,
+      "avg_sentiment": 0.64,
+      "sentiment_dist": {
+        "positive": 4,
+        "neutral": 1
+      },
+      "engagement_dist": {
+        "like": 5
+      },
+      "controversy_detected": false,
+      "controversy_risk": "skipped",
+      "outcome": "success",
+      "time_seconds": 37.6,
+      "error": null
+    },
+    {
+      "index": 3,
+      "name": "Old Spice - The Man Your Man Could Smell Like",
+      "expected_score": 88,
+      "raw_score": 32,
+      "cd_penalty": 0,
+      "final_score": 32,
+      "avg_sentiment": -0.16,
+      "sentiment_dist": {
+        "neutral": 2,
+        "negative": 3
+      },
+      "engagement_dist": {
+        "like": 1,
+        "ignore": 2,
+        "dislike": 2
+      },
+      "controversy_detected": false,
+      "controversy_risk": "skipped",
+      "outcome": "success",
+      "time_seconds": 40.1,
+      "error": null
+    },
+    {
+      "index": 4,
+      "name": "Dollar Shave Club - Our Blades Are F***ing Great",
+      "expected_score": 86,
+      "raw_score": 49,
+      "cd_penalty": 0,
+      "final_score": 49,
+      "avg_sentiment": 0.28,
+      "sentiment_dist": {
+        "positive": 2,
+        "neutral": 3
+      },
+      "engagement_dist": {
+        "share": 1,
+        "like": 4
+      },
+      "controversy_detected": false,
+      "controversy_risk": "skipped",
+      "outcome": "success",
+      "time_seconds": 38.9,
+      "error": null
+    },
+    {
+      "index": 5,
+      "name": "Always - Like A Girl",
+      "expected_score": 82,
+      "raw_score": 78,
+      "cd_penalty": 0,
+      "final_score": 78,
+      "avg_sentiment": 0.72,
+      "sentiment_dist": {
+        "positive": 4,
+        "mixed": 1
+      },
+      "engagement_dist": {
+        "like": 4,
+        "share": 1
+      },
+      "controversy_detected": false,
+      "controversy_risk": "skipped",
+      "outcome": "success",
+      "time_seconds": 42.5,
+      "error": null
+    },
+    {
+      "index": 6,
+      "name": "ALS Association - Ice Bucket Challenge",
+      "expected_score": 95,
+      "raw_score": 62,
+      "cd_penalty": 0,
+      "final_score": 62,
+      "avg_sentiment": 0.54,
+      "sentiment_dist": {
+        "positive": 3,
+        "neutral": 1,
+        "mixed": 1
+      },
+      "engagement_dist": {
+        "share": 4,
+        "like": 1
+      },
+      "controversy_detected": false,
+      "controversy_risk": "skipped",
+      "outcome": "success",
+      "time_seconds": 42.6,
+      "error": null
+    },
+    {
+      "index": 7,
+      "name": "Spotify - Wrapped",
+      "expected_score": 85,
+      "raw_score": 62,
+      "cd_penalty": 0,
+      "final_score": 62,
+      "avg_sentiment": 0.52,
+      "sentiment_dist": {
+        "positive": 3,
+        "neutral": 2
+      },
+      "engagement_dist": {
+        "share": 3,
+        "like": 2
+      },
+      "controversy_detected": false,
+      "controversy_risk": "skipped",
+      "outcome": "success",
+      "time_seconds": 42.9,
+      "error": null
+    },
+    {
+      "index": 8,
+      "name": "Wendy's - Twitter Roasts",
+      "expected_score": 78,
+      "raw_score": 58,
+      "cd_penalty": 0,
+      "final_score": 58,
+      "avg_sentiment": 0.42,
+      "sentiment_dist": {
+        "positive": 2,
+        "neutral": 3
+      },
+      "engagement_dist": {
+        "share": 1,
+        "like": 4
+      },
+      "controversy_detected": false,
+      "controversy_risk": "skipped",
+      "outcome": "success",
+      "time_seconds": 43.0,
+      "error": null
+    },
+    {
+      "index": 9,
+      "name": "Nike - Dream Crazy (Colin Kaepernick)",
+      "expected_score": 78,
+      "raw_score": 55,
+      "cd_penalty": 0,
+      "final_score": 55,
+      "avg_sentiment": 0.38,
+      "sentiment_dist": {
+        "mixed": 4,
+        "positive": 1
+      },
+      "engagement_dist": {
+        "share": 1,
+        "like": 4
+      },
+      "controversy_detected": false,
+      "controversy_risk": "skipped",
+      "outcome": "success",
+      "time_seconds": 43.2,
+      "error": null
+    },
+    {
+      "index": 10,
+      "name": "Burger King - Moldy Whopper",
+      "expected_score": 75,
+      "raw_score": 38,
+      "cd_penalty": 0,
+      "final_score": 38,
+      "avg_sentiment": -0.1,
+      "sentiment_dist": {
+        "mixed": 1,
+        "neutral": 2,
+        "negative": 2
+      },
+      "engagement_dist": {
+        "like": 3,
+        "dislike": 1,
+        "share": 1
+      },
+      "controversy_detected": false,
+      "controversy_risk": "skipped",
+      "outcome": "success",
+      "time_seconds": 42.4,
+      "error": null
+    },
+    {
+      "index": 11,
+      "name": "Apple - Shot on iPhone",
+      "expected_score": 80,
+      "raw_score": 82,
+      "cd_penalty": 0,
+      "final_score": 82,
+      "avg_sentiment": 0.68,
+      "sentiment_dist": {
+        "positive": 5
+      },
+      "engagement_dist": {
+        "like": 5
+      },
+      "controversy_detected": false,
+      "controversy_risk": "skipped",
+      "outcome": "success",
+      "time_seconds": 42.2,
+      "error": null
+    },
+    {
+      "index": 12,
+      "name": "REI - Opt Outside",
+      "expected_score": 76,
+      "raw_score": 32,
+      "cd_penalty": 0,
+      "final_score": 32,
+      "avg_sentiment": -0.32,
+      "sentiment_dist": {
+        "negative": 4,
+        "mixed": 1
+      },
+      "engagement_dist": {
+        "dislike": 4,
+        "like": 1
+      },
+      "controversy_detected": false,
+      "controversy_risk": "skipped",
+      "outcome": "success",
+      "time_seconds": 42.3,
+      "error": null
+    },
+    {
+      "index": 13,
+      "name": "Dos Equis - The Most Interesting Man in the World",
+      "expected_score": 81,
+      "raw_score": 48,
+      "cd_penalty": 0,
+      "final_score": 48,
+      "avg_sentiment": 0.22,
+      "sentiment_dist": {
+        "neutral": 5
+      },
+      "engagement_dist": {
+        "like": 5
+      },
+      "controversy_detected": false,
+      "controversy_risk": "skipped",
+      "outcome": "success",
+      "time_seconds": 42.3,
+      "error": null
+    },
+    {
+      "index": 14,
+      "name": "Metro Trains Melbourne - Dumb Ways to Die",
+      "expected_score": 87,
+      "raw_score": 16,
+      "cd_penalty": 0,
+      "final_score": 16,
+      "avg_sentiment": -0.58,
+      "sentiment_dist": {
+        "negative": 5
+      },
+      "engagement_dist": {
+        "like": 1,
+        "dislike": 4
+      },
+      "controversy_detected": false,
+      "controversy_risk": "skipped",
+      "outcome": "success",
+      "time_seconds": 41.8,
+      "error": null
+    },
+    {
+      "index": 15,
+      "name": "KFC - FCK Apology",
+      "expected_score": 79,
+      "raw_score": 42,
+      "cd_penalty": 0,
+      "final_score": 42,
+      "avg_sentiment": 0.02,
+      "sentiment_dist": {
+        "mixed": 3,
+        "negative": 2
+      },
+      "engagement_dist": {
+        "like": 4,
+        "share": 1
+      },
+      "controversy_detected": false,
+      "controversy_risk": "skipped",
+      "outcome": "success",
+      "time_seconds": 42.3,
+      "error": null
+    },
+    {
+      "index": 16,
+      "name": "John Lewis - Christmas Adverts",
+      "expected_score": 77,
+      "raw_score": 67,
+      "cd_penalty": 0,
+      "final_score": 67,
+      "avg_sentiment": 0.8,
+      "sentiment_dist": {
+        "positive": 5
+      },
+      "engagement_dist": {
+        "share": 1,
+        "like": 4
+      },
+      "controversy_detected": false,
+      "controversy_risk": "skipped",
+      "outcome": "success",
+      "time_seconds": 42.4,
+      "error": null
+    },
+    {
+      "index": 17,
+      "name": "Volvo Trucks - Epic Split (Van Damme)",
+      "expected_score": 84,
+      "raw_score": 62,
+      "cd_penalty": 0,
+      "final_score": 62,
+      "avg_sentiment": 0.44,
+      "sentiment_dist": {
+        "mixed": 2,
+        "positive": 2,
+        "neutral": 1
+      },
+      "engagement_dist": {
+        "share": 1,
+        "like": 4
+      },
+      "controversy_detected": false,
+      "controversy_risk": "skipped",
+      "outcome": "success",
+      "time_seconds": 42.2,
+      "error": null
+    },
+    {
+      "index": 18,
+      "name": "Patagonia - Don't Buy This Jacket",
+      "expected_score": 74,
+      "raw_score": 88,
+      "cd_penalty": 0,
+      "final_score": 88,
+      "avg_sentiment": 0.81,
+      "sentiment_dist": {
+        "positive": 5
+      },
+      "engagement_dist": {
+        "share": 3,
+        "like": 2
+      },
+      "controversy_detected": false,
+      "controversy_risk": "skipped",
+      "outcome": "success",
+      "time_seconds": 42.3,
+      "error": null
+    },
+    {
+      "index": 19,
+      "name": "Mastercard - Priceless",
+      "expected_score": 83,
+      "raw_score": 72,
+      "cd_penalty": 0,
+      "final_score": 72,
+      "avg_sentiment": 0.56,
+      "sentiment_dist": {
+        "positive": 4,
+        "neutral": 1
+      },
+      "engagement_dist": {
+        "like": 4,
+        "share": 1
+      },
+      "controversy_detected": false,
+      "controversy_risk": "skipped",
+      "outcome": "success",
+      "time_seconds": 42.4,
+      "error": null
+    },
+    {
+      "index": 20,
+      "name": "Pepsi - Kendall Jenner Protest Ad",
+      "expected_score": 12,
+      "raw_score": 12,
+      "cd_penalty": 0,
+      "final_score": 12,
+      "avg_sentiment": -0.64,
+      "sentiment_dist": {
+        "negative": 5
+      },
+      "engagement_dist": {
+        "dislike": 5
+      },
+      "controversy_detected": false,
+      "controversy_risk": "skipped",
+      "outcome": "failure",
+      "time_seconds": 42.3,
+      "error": null
+    },
+    {
+      "index": 21,
+      "name": "H&M - Coolest Monkey in the Jungle",
+      "expected_score": 8,
+      "raw_score": 10,
+      "cd_penalty": 0,
+      "final_score": 10,
+      "avg_sentiment": -0.6,
+      "sentiment_dist": {
+        "negative": 5
+      },
+      "engagement_dist": {
+        "dislike": 5
+      },
+      "controversy_detected": false,
+      "controversy_risk": "skipped",
+      "outcome": "failure",
+      "time_seconds": 42.5,
+      "error": null
+    },
+    {
+      "index": 22,
+      "name": "Peloton - The Gift That Gives Back (Holiday Ad)",
+      "expected_score": 22,
+      "raw_score": 75,
+      "cd_penalty": 0,
+      "final_score": 75,
+      "avg_sentiment": 0.78,
+      "sentiment_dist": {
+        "positive": 5
+      },
+      "engagement_dist": {
+        "like": 2,
+        "share": 3
+      },
+      "controversy_detected": false,
+      "controversy_risk": "skipped",
+      "outcome": "failure",
+      "time_seconds": 42.4,
+      "error": null
+    },
+    {
+      "index": 23,
+      "name": "Gillette - The Best Men Can Be",
+      "expected_score": 35,
+      "raw_score": 32,
+      "cd_penalty": 0,
+      "final_score": 32,
+      "avg_sentiment": -0.2,
+      "sentiment_dist": {
+        "mixed": 2,
+        "negative": 3
+      },
+      "engagement_dist": {
+        "like": 2,
+        "dislike": 3
+      },
+      "controversy_detected": false,
+      "controversy_risk": "skipped",
+      "outcome": "failure",
+      "time_seconds": 42.3,
+      "error": null
+    },
+    {
+      "index": 24,
+      "name": "Fyre Festival - Influencer Marketing",
+      "expected_score": 15,
+      "raw_score": 82,
+      "cd_penalty": 0,
+      "final_score": 82,
+      "avg_sentiment": 0.85,
+      "sentiment_dist": {
+        "positive": 5
+      },
+      "engagement_dist": {
+        "like": 3,
+        "share": 2
+      },
+      "controversy_detected": false,
+      "controversy_risk": "skipped",
+      "outcome": "failure",
+      "time_seconds": 42.5,
+      "error": null
+    },
+    {
+      "index": 25,
+      "name": "Snapchat - Would You Rather?",
+      "expected_score": 5,
+      "raw_score": 28,
+      "cd_penalty": 0,
+      "final_score": 28,
+      "avg_sentiment": -0.1,
+      "sentiment_dist": {
+        "neutral": 3,
+        "negative": 2
+      },
+      "engagement_dist": {
+        "ignore": 1,
+        "dislike": 2,
+        "like": 2
+      },
+      "controversy_detected": false,
+      "controversy_risk": "skipped",
+      "outcome": "failure",
+      "time_seconds": 45.5,
+      "error": null
+    },
+    {
+      "index": 26,
+      "name": "Dove - Body-Shaped Bottles",
+      "expected_score": 28,
+      "raw_score": 80,
+      "cd_penalty": 0,
+      "final_score": 80,
+      "avg_sentiment": 0.77,
+      "sentiment_dist": {
+        "positive": 5
+      },
+      "engagement_dist": {
+        "like": 4,
+        "share": 1
+      },
+      "controversy_detected": false,
+      "controversy_risk": "skipped",
+      "outcome": "failure",
+      "time_seconds": 45.3,
+      "error": null
+    },
+    {
+      "index": 27,
+      "name": "Bloomingdale's - Spike Your Best Friend's Eggnog",
+      "expected_score": 10,
+      "raw_score": 10,
+      "cd_penalty": 0,
+      "final_score": 10,
+      "avg_sentiment": -0.68,
+      "sentiment_dist": {
+        "negative": 5
+      },
+      "engagement_dist": {
+        "dislike": 5
+      },
+      "controversy_detected": false,
+      "controversy_risk": "skipped",
+      "outcome": "failure",
+      "time_seconds": 45.4,
+      "error": null
+    },
+    {
+      "index": 28,
+      "name": "Nivea - White Is Purity",
+      "expected_score": 7,
+      "raw_score": 42,
+      "cd_penalty": 0,
+      "final_score": 42,
+      "avg_sentiment": 0.02,
+      "sentiment_dist": {
+        "neutral": 4,
+        "negative": 1
+      },
+      "engagement_dist": {
+        "like": 4,
+        "dislike": 1
+      },
+      "controversy_detected": false,
+      "controversy_risk": "skipped",
+      "outcome": "failure",
+      "time_seconds": 45.5,
+      "error": null
+    },
+    {
+      "index": 29,
+      "name": "Audi - Used Car Bride Inspection Ad (China)",
+      "expected_score": 14,
+      "raw_score": 17,
+      "cd_penalty": 0,
+      "final_score": 17,
+      "avg_sentiment": -0.56,
+      "sentiment_dist": {
+        "negative": 5
+      },
+      "engagement_dist": {
+        "dislike": 4,
+        "like": 1
+      },
+      "controversy_detected": false,
+      "controversy_risk": "skipped",
+      "outcome": "failure",
+      "time_seconds": 46.9,
+      "error": null
+    },
+    {
+      "index": 30,
+      "name": "McDonald's - Dead Dad Ad (UK)",
+      "expected_score": 18,
+      "raw_score": 59,
+      "cd_penalty": 0,
+      "final_score": 59,
+      "avg_sentiment": 0.34,
+      "sentiment_dist": {
+        "mixed": 4,
+        "neutral": 1
+      },
+      "engagement_dist": {
+        "like": 5
+      },
+      "controversy_detected": false,
+      "controversy_risk": "skipped",
+      "outcome": "failure",
+      "time_seconds": 45.5,
+      "error": null
+    },
+    {
+      "index": 31,
+      "name": "Sony - White PSP Ad",
+      "expected_score": 9,
+      "raw_score": 12,
+      "cd_penalty": 0,
+      "final_score": 12,
+      "avg_sentiment": -0.82,
+      "sentiment_dist": {
+        "negative": 5
+      },
+      "engagement_dist": {
+        "dislike": 5
+      },
+      "controversy_detected": false,
+      "controversy_risk": "skipped",
+      "outcome": "failure",
+      "time_seconds": 45.4,
+      "error": null
+    },
+    {
+      "index": 32,
+      "name": "Gap - New Logo Rebrand",
+      "expected_score": 25,
+      "raw_score": 67,
+      "cd_penalty": 0,
+      "final_score": 67,
+      "avg_sentiment": 0.58,
+      "sentiment_dist": {
+        "positive": 4,
+        "neutral": 1
+      },
+      "engagement_dist": {
+        "like": 5
+      },
+      "controversy_detected": false,
+      "controversy_risk": "skipped",
+      "outcome": "failure",
+      "time_seconds": 45.1,
+      "error": null
+    },
+    {
+      "index": 33,
+      "name": "Balenciaga - Holiday Gift Shop Bondage Bears",
+      "expected_score": 3,
+      "raw_score": 5,
+      "cd_penalty": 0,
+      "final_score": 5,
+      "avg_sentiment": -0.64,
+      "sentiment_dist": {
+        "negative": 5
+      },
+      "engagement_dist": {
+        "dislike": 5
+      },
+      "controversy_detected": false,
+      "controversy_risk": "skipped",
+      "outcome": "failure",
+      "time_seconds": 45.0,
+      "error": null
+    },
+    {
+      "index": 34,
+      "name": "Bud Light - Dylan Mulvaney Partnership",
+      "expected_score": 20,
+      "raw_score": 35,
+      "cd_penalty": 0,
+      "final_score": 35,
+      "avg_sentiment": -0.12,
+      "sentiment_dist": {
+        "neutral": 3,
+        "negative": 2
+      },
+      "engagement_dist": {
+        "like": 3,
+        "dislike": 2
+      },
+      "controversy_detected": false,
+      "controversy_risk": "skipped",
+      "outcome": "failure",
+      "time_seconds": 43.5,
+      "error": null
+    },
+    {
+      "index": 35,
+      "name": "Toyota - Let's Go Places",
+      "expected_score": 48,
+      "raw_score": 52,
+      "cd_penalty": 0,
+      "final_score": 52,
+      "avg_sentiment": 0.28,
+      "sentiment_dist": {
+        "neutral": 3,
+        "positive": 1,
+        "mixed": 1
+      },
+      "engagement_dist": {
+        "like": 5
+      },
+      "controversy_detected": false,
+      "controversy_risk": "skipped",
+      "outcome": "success",
+      "time_seconds": 40.6,
+      "error": null
+    },
+    {
+      "index": 36,
+      "name": "Microsoft - Scroogled",
+      "expected_score": 38,
+      "raw_score": 42,
+      "cd_penalty": 0,
+      "final_score": 42,
+      "avg_sentiment": -0.04,
+      "sentiment_dist": {
+        "mixed": 2,
+        "neutral": 1,
+        "negative": 2
+      },
+      "engagement_dist": {
+        "like": 2,
+        "ignore": 1,
+        "share": 1,
+        "dislike": 1
+      },
+      "controversy_detected": false,
+      "controversy_risk": "skipped",
+      "outcome": "failure",
+      "time_seconds": 40.6,
+      "error": null
+    },
+    {
+      "index": 37,
+      "name": "Samsung - Next Big Thing (Anti-iPhone)",
+      "expected_score": 62,
+      "raw_score": 42,
+      "cd_penalty": 0,
+      "final_score": 42,
+      "avg_sentiment": 0.2,
+      "sentiment_dist": {
+        "mixed": 1,
+        "neutral": 4
+      },
+      "engagement_dist": {
+        "like": 5
+      },
+      "controversy_detected": false,
+      "controversy_risk": "skipped",
+      "outcome": "success",
+      "time_seconds": 40.5,
+      "error": null
+    },
+    {
+      "index": 38,
+      "name": "Quibi - Quick Bites, Big Stories",
+      "expected_score": 32,
+      "raw_score": 65,
+      "cd_penalty": 0,
+      "final_score": 65,
+      "avg_sentiment": 0.5,
+      "sentiment_dist": {
+        "positive": 3,
+        "neutral": 2
+      },
+      "engagement_dist": {
+        "like": 4,
+        "ignore": 1
+      },
+      "controversy_detected": false,
+      "controversy_risk": "skipped",
+      "outcome": "failure",
+      "time_seconds": 40.5,
+      "error": null
+    },
+    {
+      "index": 39,
+      "name": "Uber - Moving Forward",
+      "expected_score": 45,
+      "raw_score": 55,
+      "cd_penalty": 0,
+      "final_score": 55,
+      "avg_sentiment": 0.34,
+      "sentiment_dist": {
+        "mixed": 1,
+        "neutral": 3,
+        "positive": 1
+      },
+      "engagement_dist": {
+        "like": 5
+      },
+      "controversy_detected": false,
+      "controversy_risk": "skipped",
+      "outcome": "success",
+      "time_seconds": 40.5,
+      "error": null
+    },
+    {
+      "index": 40,
+      "name": "Hyundai - Assurance Program",
+      "expected_score": 68,
+      "raw_score": 55,
+      "cd_penalty": 0,
+      "final_score": 55,
+      "avg_sentiment": 0.3,
+      "sentiment_dist": {
+        "mixed": 5
+      },
+      "engagement_dist": {
+        "like": 5
+      },
+      "controversy_detected": false,
+      "controversy_risk": "skipped",
+      "outcome": "success",
+      "time_seconds": 42.3,
+      "error": null
+    },
+    {
+      "index": 41,
+      "name": "Coca-Cola - New Coke",
+      "expected_score": 30,
+      "raw_score": 47,
+      "cd_penalty": 0,
+      "final_score": 47,
+      "avg_sentiment": 0.2,
+      "sentiment_dist": {
+        "neutral": 5
+      },
+      "engagement_dist": {
+        "like": 5
+      },
+      "controversy_detected": false,
+      "controversy_risk": "skipped",
+      "outcome": "failure",
+      "time_seconds": 42.2,
+      "error": null
+    },
+    {
+      "index": 42,
+      "name": "Amazon - Alexa Loses Her Voice (Super Bowl)",
+      "expected_score": 65,
+      "raw_score": 47,
+      "cd_penalty": 0,
+      "final_score": 47,
+      "avg_sentiment": 0.26,
+      "sentiment_dist": {
+        "mixed": 2,
+        "neutral": 3
+      },
+      "engagement_dist": {
+        "share": 2,
+        "like": 3
+      },
+      "controversy_detected": false,
+      "controversy_risk": "skipped",
+      "outcome": "success",
+      "time_seconds": 42.5,
+      "error": null
+    },
+    {
+      "index": 43,
+      "name": "Airbnb - Belong Anywhere",
+      "expected_score": 58,
+      "raw_score": 78,
+      "cd_penalty": 0,
+      "final_score": 78,
+      "avg_sentiment": 0.72,
+      "sentiment_dist": {
+        "positive": 5
+      },
+      "engagement_dist": {
+        "share": 3,
+        "like": 2
+      },
+      "controversy_detected": false,
+      "controversy_risk": "skipped",
+      "outcome": "success",
+      "time_seconds": 42.7,
+      "error": null
+    },
+    {
+      "index": 44,
+      "name": "Chase Bank - Monday Motivation",
+      "expected_score": 25,
+      "raw_score": 42,
+      "cd_penalty": 0,
+      "final_score": 42,
+      "avg_sentiment": 0.08,
+      "sentiment_dist": {
+        "negative": 1,
+        "mixed": 2,
+        "neutral": 2
+      },
+      "engagement_dist": {
+        "like": 5
+      },
+      "controversy_detected": false,
+      "controversy_risk": "skipped",
+      "outcome": "failure",
+      "time_seconds": 42.8,
+      "error": null
+    },
+    {
+      "index": 45,
+      "name": "배달의민족 - 우리가 어떤 민족입니까",
+      "expected_score": 82,
+      "raw_score": 72,
+      "cd_penalty": 0,
+      "final_score": 72,
+      "avg_sentiment": 0.66,
+      "sentiment_dist": {
+        "positive": 4,
+        "neutral": 1
+      },
+      "engagement_dist": {
+        "like": 4,
+        "ignore": 1
+      },
+      "controversy_detected": false,
+      "controversy_risk": "skipped",
+      "outcome": "success",
+      "time_seconds": 45.2,
+      "error": null
+    },
+    {
+      "index": 46,
+      "name": "삼성 - Galaxy Unpacked (BTS Collaboration)",
+      "expected_score": 75,
+      "raw_score": 72,
+      "cd_penalty": 0,
+      "final_score": 72,
+      "avg_sentiment": 0.6,
+      "sentiment_dist": {
+        "positive": 4,
+        "neutral": 1
+      },
+      "engagement_dist": {
+        "like": 4,
+        "share": 1
+      },
+      "controversy_detected": false,
+      "controversy_risk": "skipped",
+      "outcome": "success",
+      "time_seconds": 45.3,
+      "error": null
+    },
+    {
+      "index": 47,
+      "name": "쿠팡 - 로켓배송",
+      "expected_score": 70,
+      "raw_score": 72,
+      "cd_penalty": 0,
+      "final_score": 72,
+      "avg_sentiment": 0.64,
+      "sentiment_dist": {
+        "positive": 4,
+        "neutral": 1
+      },
+      "engagement_dist": {
+        "like": 5
+      },
+      "controversy_detected": false,
+      "controversy_risk": "skipped",
+      "outcome": "success",
+      "time_seconds": 45.4,
+      "error": null
+    },
+    {
+      "index": 48,
+      "name": "남양유업 - 불가리스 코로나 효과 논란",
+      "expected_score": 11,
+      "raw_score": 48,
+      "cd_penalty": 0,
+      "final_score": 48,
+      "avg_sentiment": 0.2,
+      "sentiment_dist": {
+        "neutral": 4,
+        "mixed": 1
+      },
+      "engagement_dist": {
+        "like": 3,
+        "share": 2
+      },
+      "controversy_detected": false,
+      "controversy_risk": "skipped",
+      "outcome": "failure",
+      "time_seconds": 45.6,
+      "error": null
+    },
+    {
+      "index": 49,
+      "name": "빙그레 - 빙그레우스 더 마시스",
+      "expected_score": 78,
+      "raw_score": 72,
+      "cd_penalty": 0,
+      "final_score": 72,
+      "avg_sentiment": 0.6,
+      "sentiment_dist": {
+        "positive": 4,
+        "neutral": 1
+      },
+      "engagement_dist": {
+        "like": 5
+      },
+      "controversy_detected": false,
+      "controversy_risk": "skipped",
+      "outcome": "success",
+      "time_seconds": 45.4,
+      "error": null
+    }
+  ]
+}
