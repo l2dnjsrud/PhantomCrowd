@@ -50,8 +50,19 @@ Sample Comments:
 {sample_comments}
 
 Provide:
-1. A concise summary (2-3 sentences) of overall audience reception
-2. A viral score from 0-100 (how likely this content will spread)
+1. A concise summary (2-3 sentences) of overall audience reception. Be honest about weaknesses.
+2. A viral score from 0-100 using this STRICT calibration:
+   - 0-15: Actively harmful, would cause brand damage or backlash
+   - 16-30: Poor, mostly negative reactions, offensive or tone-deaf
+   - 31-45: Below average, weak engagement, forgettable
+   - 46-55: Average, some positive but nothing compelling to share
+   - 56-70: Good, solid positive sentiment, moderate sharing potential
+   - 71-85: Very good, strong engagement, clear viral potential
+   - 86-95: Excellent, overwhelming positive, massive sharing
+   - 96-100: Legendary, historic campaign level
+   IMPORTANT: Most content scores 40-60. Above 75 requires strong evidence.
+   If avg sentiment < 0.3, score should NOT exceed 60.
+   If "ignore" or "dislike" exceeds 30%, subtract 15+ points.
 3. 3-5 actionable suggestions to improve the content
 
 Return ONLY a JSON object:

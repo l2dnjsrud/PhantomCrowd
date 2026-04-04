@@ -77,6 +77,12 @@ SYNTHESIS_PROMPT = """You are a senior marketing analyst. Synthesize these repor
 
 Content: {content}
 
+Simulation Statistics:
+- Average sentiment score: {avg_score:.2f} (range: -1.0 to 1.0)
+- Positive ratio: {positive_ratio:.0%}
+- Negative ratio: {negative_ratio:.0%}
+- Engagement rate: {engagement_rate:.0%} (non-ignore actions / total)
+
 Sections:
 {sections_text}
 
@@ -84,8 +90,23 @@ Influencer Analysis:
 {influencer_data}
 
 Provide:
-1. viral_score (0-100): how likely this content spreads virally
-2. summary: 2-3 sentence executive summary
+1. viral_score (0-100): Use this STRICT calibration scale:
+   - 0-15: Actively harmful. Would cause brand damage, boycotts, PR crisis.
+   - 16-30: Poor. Mostly negative reactions, offensive/tone-deaf content. Most people would ignore or criticize.
+   - 31-45: Below average. Weak engagement, forgettable content. No sharing momentum.
+   - 46-55: Average. Some positive reactions but nothing compelling enough to share widely.
+   - 56-70: Good. Solid positive sentiment, moderate sharing. Decent campaign but not exceptional.
+   - 71-85: Very good. Strong positive engagement, high share rate, clear viral potential.
+   - 86-95: Excellent. Overwhelming positive response, massive sharing, cultural moment potential.
+   - 96-100: Legendary. Historic campaign level (Think: Nike "Just Do It", Apple "Think Different").
+
+   IMPORTANT: Most content should score 40-60. Scores above 75 require overwhelming evidence.
+   A score above 85 should be RARE. Use the actual sentiment data to justify your score.
+   If avg sentiment is below 0.3, the score should NOT be above 60.
+   If negative ratio exceeds 20%, subtract at least 15 points from your initial estimate.
+   Content that is offensive, exclusionary, or shaming should score below 30 regardless of engagement.
+
+2. summary: 2-3 sentence executive summary. Be honest about weaknesses.
 3. recommendations: 3-5 specific, actionable recommendations
 
 Return JSON:
@@ -221,8 +242,19 @@ async def generate_report(
     influencer_result = identify_influencers(actions, top_n=5)
     sections_text = "\n\n".join(f"## {s['title']}\n{s['content'][:300]}" for s in completed_sections)
 
+    # Compute calibration stats for scoring
+    positive_count = stats["sentiments"].get("positive", 0)
+    negative_count = stats["sentiments"].get("negative", 0)
+    total_sentiment = sum(stats["sentiments"].values()) or 1
+    ignore_count = stats["engagements"].get("ignore", 0)
+    total_engage = sum(stats["engagements"].values()) or 1
+
     synthesis_text = await _llm_call(SYNTHESIS_PROMPT.format(
         content=content[:500],
+        avg_score=stats["avg_score"],
+        positive_ratio=positive_count / total_sentiment,
+        negative_ratio=negative_count / total_sentiment,
+        engagement_rate=(total_engage - ignore_count) / total_engage,
         sections_text=sections_text,
         influencer_data=influencer_result.result,
     ), 1024)
