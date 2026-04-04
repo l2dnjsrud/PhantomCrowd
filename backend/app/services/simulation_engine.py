@@ -141,10 +141,21 @@ async def _generate_batch_reactions(
     return results
 
 
+ANALYSIS_LANG_MAP = {
+    "ko": "\n\nIMPORTANT: Write ALL output in Korean (한국어). Summary and suggestions must be in Korean.",
+    "ja": "\n\nIMPORTANT: Write ALL output in Japanese (日本語).",
+    "zh": "\n\nIMPORTANT: Write ALL output in Chinese (中文).",
+    "es": "\n\nIMPORTANT: Write ALL output in Spanish (Español).",
+    "fr": "\n\nIMPORTANT: Write ALL output in French (Français).",
+    "de": "\n\nIMPORTANT: Write ALL output in German (Deutsch).",
+}
+
+
 async def _analyze_results(
     client: AsyncOpenAI,
     content: str,
     reactions: list[dict],
+    language: str = "en",
 ) -> dict:
     sentiment_dist = {}
     engagement_dist = {}
@@ -160,6 +171,7 @@ async def _analyze_results(
         f"- [{r['sentiment']}] {r['comment']}" for r in reactions[:10]
     )
 
+    lang_instruction = ANALYSIS_LANG_MAP.get(language, "")
     prompt = ANALYSIS_PROMPT.format(
         content=content[:500],
         total=len(reactions),
@@ -167,7 +179,7 @@ async def _analyze_results(
         engagement_dist=json.dumps(engagement_dist),
         avg_score=avg_score,
         sample_comments=sample_comments,
-    )
+    ) + lang_instruction
 
     response = await client.chat.completions.create(
         model=settings.llm_analysis_model,
@@ -236,7 +248,8 @@ async def run_simulation(simulation_id: str, db: AsyncSession):
                 raise
 
         # Step 3: Analyze results
-        analysis = await _analyze_results(client, sim.content, all_reactions)
+        sim_language = getattr(sim, "language", "en") or "en"
+        analysis = await _analyze_results(client, sim.content, all_reactions, language=sim_language)
 
         sim.viral_score = analysis["viral_score"]
         sim.summary = analysis["summary"]
