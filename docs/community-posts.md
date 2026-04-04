@@ -83,19 +83,143 @@ https://github.com/l2dnjsrud/PhantomCrowd
 
 ---
 
-### r/ChatGPT / r/ClaudeAI
+### r/ClaudeAI
 
-**Title:** I used LLMs to simulate 500 people reacting to content — here's what I learned building PhantomCrowd
+**Title:** I built a multi-agent audience simulator using Claude API — 500 AI personas react to your content before you post it
 
 **Body:**
 
-Instead of asking one LLM "will this content work?", I made up to 500 LLM-powered personas with different ages, jobs, personalities, and social media habits react independently.
+I built **PhantomCrowd**, an open-source tool that uses Claude to simulate how real audiences will react to your content.
 
-The results are surprisingly realistic. A 19-year-old K-pop fan reacts very differently from a 45-year-old marketing executive — and when they interact with each other on a simulated social network, you get emergent behavior you can't predict from individual responses.
+**How Claude is used:**
+- **Haiku** generates persona reactions (fast, cheap — handles 500 personas)
+- **Sonnet** does the heavy lifting: persona generation, knowledge graph analysis, marketing reports
+- Works with any OpenAI-compatible API, so you can also use Ollama locally for free
 
-Key insight: **diversity of personas matters more than the number.** 50 well-constructed personas give better signal than 200 generic ones.
+**What it actually does:**
+1. You paste content (ad copy, social post, product launch)
+2. It generates 10–500 personas with unique demographics, personalities, social media habits
+3. Each persona reacts independently — writes comments, decides to like/share/ignore/dislike
+4. In Campaign mode: personas interact with *each other* on a simulated social network (up to 100 LLM agents + 2,000 rule-based agents)
+5. You get a dashboard with sentiment distribution, viral score, and improvement suggestions
 
-Open source, runs locally with Ollama: https://github.com/l2dnjsrud/PhantomCrowd
+The results are surprisingly realistic. A 19-year-old K-pop fan reacts very differently from a 45-year-old marketing executive — and when they interact, you get emergent behavior you can't predict from individual responses.
+
+MIT licensed, Docker support, 12 languages.
+
+GitHub: https://github.com/l2dnjsrud/PhantomCrowd
+
+---
+
+### r/LocalLLaMA
+
+**Title:** PhantomCrowd: multi-agent audience simulator that runs 100% locally with Ollama — no paid API needed
+
+**Body:**
+
+Built an open-source tool that simulates how audiences react to content before you publish it. Runs entirely on your machine with Ollama.
+
+**Local setup (3 commands):**
+```
+ollama pull qwen2.5:7b
+ollama pull nomic-embed-text
+docker compose up --build
+```
+
+That's it. No API keys, no cloud services, no Zep Cloud (looking at you, MiroFish).
+
+**What it does:**
+- Generate 10–500 AI personas with unique demographics and personalities
+- Each persona reacts independently to your content
+- Campaign mode: up to 100 LLM agents + 2,000 rule-based agents interact on a simulated social network
+- Knowledge graph (LightRAG + NetworkX) built from your content context
+- Marketing report with viral score, segment analysis, recommendations
+
+**Models used:**
+- `qwen2.5:7b` for persona reactions (fast enough for 500 personas)
+- `nomic-embed-text` for knowledge graph embeddings
+- Any OpenAI-compatible model works — swap in `llama3.1`, `mistral`, `exaone3.5`, whatever you prefer
+
+**Performance on my 3090:**
+- 50 personas: ~3 minutes
+- 200 personas: ~12 minutes
+- Campaign (20 LLM agents, 5 rounds): ~8 minutes
+
+Stack: Python/FastAPI, Vue 3, LightRAG, camel-ai, D3.js, ECharts.
+
+MIT licensed. No telemetry. Your data stays on your machine.
+
+https://github.com/l2dnjsrud/PhantomCrowd
+
+---
+
+### r/ollama
+
+**Title:** Built an audience simulator that uses Ollama to run 500 AI personas locally — PhantomCrowd
+
+**Body:**
+
+I wanted to test marketing content without paying for API calls, so I built **PhantomCrowd** to run entirely on Ollama.
+
+**Recommended models:**
+- `qwen2.5:7b` — best balance of speed and quality for persona reactions
+- `exaone3.5:7.8b` — excellent for Korean language simulations
+- `nomic-embed-text` — for knowledge graph embeddings
+
+**What it does:**
+- Paste your content (ad copy, social post, etc.)
+- Ollama generates 10–500 AI personas that react independently
+- Campaign mode: multi-agent simulation where personas argue, share, and debate
+- Get a viral score, sentiment breakdown, and improvement suggestions
+
+**Config is simple (.env):**
+```
+PC_LLM_BASE_URL=http://localhost:11434/v1
+PC_LLM_API_KEY=ollama
+PC_LLM_MODEL=qwen2.5:7b
+PC_LLM_ANALYSIS_MODEL=qwen2.5:7b
+```
+
+Works with any model Ollama supports. Also compatible with OpenAI, Groq, Together AI if you want to use cloud APIs.
+
+Docker + Ollama setup guide included. MIT licensed.
+
+https://github.com/l2dnjsrud/PhantomCrowd
+
+---
+
+### r/AI_Agents
+
+**Title:** PhantomCrowd: open-source multi-agent social simulation — 100 LLM agents + 2,000 rule-based agents interact on simulated social media
+
+**Body:**
+
+Built an open-source multi-agent simulation platform specifically for content marketing prediction.
+
+**Agent Architecture:**
+
+The simulation uses a tiered agent model:
+- **LLM Agents (up to 100):** Full personality, graph-grounded context via LightRAG, long-form reasoning. Built with camel-ai ChatAgent. Each agent has age, occupation, interests, personality traits, and social media habits.
+- **Rule-Based Agents (up to 2,000):** Probability-driven behavior (share if sentiment > 0.5 AND interests overlap > 2, etc.). Creates realistic crowd dynamics without burning API calls.
+
+**Simulation Flow:**
+1. **Knowledge Graph Build** — LightRAG extracts entities and relationships from content + context
+2. **Profile Generation** — Ontology-aware persona creation grounded in the knowledge graph
+3. **Multi-Round Simulation** — Agents post, reply, share, like, dislike on simulated social media. Each round feeds into the next.
+4. **Report Generation** — ReACT-pattern agent uses `graph_search`, `action_search`, `sentiment_aggregate` tools to produce marketing analysis
+5. **Agent Interview** — Post-sim Q&A with individual agents ("Why did you share this?")
+
+**Memory System:**
+Each LLM agent maintains relationship memory — sentiment toward other agents shifts based on interactions. An agent who got criticized in round 2 might dislike in round 3.
+
+**What makes it different from MiroFish:**
+- No Zep Cloud dependency (fully local with Ollama)
+- Marketing-specific (A/B testing, viral scoring, segment analysis)
+- MIT license (vs AGPL-3.0)
+
+Stack: Python/FastAPI, camel-ai, LightRAG, NetworkX, Vue 3, D3.js.
+
+https://github.com/l2dnjsrud/PhantomCrowd
 
 ---
 
@@ -304,11 +428,16 @@ PhantomCrowd is an open-source AI audience simulator. Paste your content, and hu
 
 | 순서 | 채널 | 이유 |
 |------|------|------|
-| 1 | Twitter/X thread | 빠른 확산 + 데모 GIF 첨부 가능 |
-| 2 | r/SideProject + r/artificial | 얼리어답터 유입 |
-| 3 | Hacker News Show HN | 기술 커뮤니티 신뢰도 |
-| 4 | GeekNews | 한국 기술 커뮤니티 |
-| 5 | DEV.to 아티클 | SEO + 장기 유입 |
-| 6 | ProductHunt | 런칭 이벤트 |
-| 7 | r/marketing | 실사용자 피드백 |
-| 8 | 클리앙 | 한국 일반 커뮤니티 |
+| 1 | r/SideProject | 가장 프로모션 친화적, 안전한 첫 게시 |
+| 2 | r/ClaudeAI | Claude API 사용 프로젝트, 높은 관련성 |
+| 3 | r/LocalLLaMA | Ollama 로컬 실행 강조, 대형 커뮤니티 |
+| 4 | r/AI_Agents | 멀티에이전트 기술 타겟 |
+| 5 | r/ollama | Ollama 전용, 니치 타겟 |
+| 6 | r/artificial | 넓은 AI 커뮤니티 |
+| 7 | Twitter/X thread | 빠른 확산 + 데모 GIF |
+| 8 | Hacker News Show HN | 기술 커뮤니티 신뢰도 |
+| 9 | GeekNews | 한국 기술 커뮤니티 |
+| 10 | DEV.to 아티클 | SEO + 장기 유입 |
+| 11 | r/marketing | 실사용자 피드백 |
+| 12 | ProductHunt | 런칭 이벤트 |
+| 13 | 클리앙 | 한국 일반 커뮤니티 |
