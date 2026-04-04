@@ -73,7 +73,7 @@ async def generate_profiles(
 
     # Generate LLM profiles via API
     response = await client.chat.completions.create(
-        model=settings.llm_analysis_model,
+        model=settings.llm_model,
         max_tokens=4096,
         messages=[{
             "role": "user",

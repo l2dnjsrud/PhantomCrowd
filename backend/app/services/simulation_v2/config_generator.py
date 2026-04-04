@@ -54,7 +54,7 @@ async def generate_sim_config(
 
     client = AsyncOpenAI(api_key=settings.llm_api_key, base_url=settings.llm_base_url)
     response = await client.chat.completions.create(
-        model=settings.llm_analysis_model,
+        model=settings.llm_model,
         max_tokens=1024,
         messages=[{
             "role": "user",

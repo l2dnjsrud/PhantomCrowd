@@ -11,6 +11,7 @@ class Settings(BaseSettings):
     llm_base_url: str = "https://api.openai.com/v1"
     llm_model: str = "gpt-4o-mini"
     llm_analysis_model: str = "gpt-4o"
+    controversy_model: str = ""  # Separate model for controversy detection (uses Ollama native API)
 
     # Simulation defaults
     default_audience_size: int = 50

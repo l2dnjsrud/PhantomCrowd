@@ -1,5 +1,8 @@
 import asyncio
+import logging
 from datetime import datetime
+
+logger = logging.getLogger(__name__)
 
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
 from pydantic import BaseModel, Field
@@ -19,6 +22,7 @@ from app.services.simulation_v2.engine import (
     run_simulation, get_simulation_state, Action,
 )
 from app.services.report.report_agent import generate_report, interview_agent
+from app.services.controversy_detector import detect_controversy, build_controversy_context
 
 router = APIRouter(prefix="/v2/campaigns", tags=["campaigns-v2"])
 
@@ -154,6 +158,23 @@ async def _run_campaign_pipeline(campaign_id: str):
             except Exception:
                 sim_config = None
 
+            # Step 2.7: Controversy Detection (pre-scan)
+            controversy = await detect_controversy(
+                content=campaign.content,
+                content_type=campaign.content_type,
+                language=campaign.language,
+                context=campaign.context_text or "",
+            )
+            logger.info(
+                "Controversy detection result: has=%s risk=%s penalty=%s",
+                controversy.get("has_controversy"),
+                controversy.get("overall_risk"),
+                controversy.get("total_score_penalty"),
+            )
+            controversy_context = build_controversy_context(controversy)
+            if controversy_context:
+                graph_context = graph_context + "\n" + controversy_context
+
             # Step 3: Run simulation
             campaign.status = "simulating"
             await db.commit()
@@ -201,6 +222,16 @@ async def _run_campaign_pipeline(campaign_id: str):
                 graph_context=graph_context,
                 language=campaign.language,
             )
+
+            # Apply controversy penalty to viral score
+            raw_score = report.get("viral_score", 50)
+            penalty = controversy.get("total_score_penalty", 0)
+            if penalty > 0:
+                report["viral_score"] = max(5, raw_score - penalty)
+                report["controversy"] = controversy
+                logger.info("Applied controversy penalty: %s -> %s (-%s)", raw_score, report["viral_score"], penalty)
+            else:
+                logger.info("No controversy penalty (raw score: %s)", raw_score)
 
             campaign.viral_score = report.get("viral_score")
             campaign.summary = report.get("summary")

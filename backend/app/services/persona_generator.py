@@ -51,7 +51,7 @@ async def generate_personas(
     while remaining > 0:
         batch = min(remaining, 20)
         response = await client.chat.completions.create(
-            model=settings.llm_analysis_model,
+            model=settings.llm_model,
             max_tokens=4096,
             messages=[
                 {
